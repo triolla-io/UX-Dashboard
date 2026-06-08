@@ -1,201 +1,246 @@
-# Dashboard Critique Pipeline — Design Spec
+# Dashboard Audit Scorecard — Design Spec (v2)
 
 **Date:** 2026-06-08
-**Status:** Draft for review
+**Status:** Draft for review (v2 — replaces the consultant-report design after the actual
+lead-gen teaser UI was surfaced)
 **Author:** Ariel + Claude
+
+## What changed from v1
+
+v1 designed a long, two-pass consultant report. The actual product surface is a **lead-gen
+teaser scorecard** (overall score + 4 category scores + a few visible insights + a locked
+"Contact Us" block). That makes the long report the wrong deliverable and lets us use much
+lighter processing. v2 redesigns around the real surface and around one hard requirement:
+**the scores must be derived from the uploaded dashboard, never fabricated.**
 
 ## Problem
 
-The product takes a dashboard screenshot and returns a professional UX critique. The
-critique must read like a senior consultant's deliverable, with the DDIA / data-trust
-lens as Triolla's differentiator.
+The product takes a dashboard screenshot and returns a **lead-generation teaser**, already
+built in [`ResultScreen.tsx`](../../frontend/src/components/ResultScreen.tsx):
 
-The current output is a competent but **generic** UX audit. Root cause, found in the code:
+- An **overall score** (0–100) + verdict label ("Below industry average").
+- **4 category scores:** UX · Visual Design · Usability · Data Clarity.
+- **Top insights** — a few one-liners shown; the rest blurred behind
+  "N+ insights are locked" → **Contact Us** (the real conversion goal).
 
-1. **The skill is starved.** [`backend/src/routes/feedback.ts`](../../backend/src/routes/feedback.ts)
-   sends only `dashboard.md` (~86 lines) as the system prompt. The full skill — 12 chapters
-   + patterns + cheatsheet + glossary, ~2127 lines — sits unused in `backend/src/skills/`.
-   `dashboard.md` itself is an *edited-down* adaptation of the original skill.
-2. **The prompt is mis-weighted.** `dashboard.md` instructs the model to lead with
-   "Visual hierarchy & clarity" and "weight it heavily", pushing it toward generic visual
-   findings and demoting the data-trust differentiator.
-3. **The model is weaker than the benchmark.** The product runs Sonnet 4.6. The
-   benchmark output the user values was produced by a stronger model (Opus-class) running
-   the skill openly, layering its own consulting knowledge (persona, design alternatives,
-   product strategy) on top of the DDIA data lens.
+Two critical defects in the current implementation:
 
-Key insight: the missing material (persona frameworks, "BI reference" patterns, design
-alternatives) is **not** a set of files we lack — it is the model's own UX/consulting
-knowledge, which a strong model produces when given the right structure and not
-over-constrained. The fix is therefore: feed the full skill, adopt a consultant-grade
-output structure, use a strong model, and stop over-constraining.
+1. **The scores are fabricated.** [`ResultScreen.tsx:20-35`](../../frontend/src/components/ResultScreen.tsx#L20-L35)
+   `deriveScores()` keyword-counts the prose (`critical`, `strong`, …) and applies hardcoded
+   per-category offsets (`base + 10`, `base − 12`, `dataClarity = base − 6`). When feedback is
+   empty it falls back to hardcoded mockup numbers `{ux:78, visual:24, usability:71, dataClarity:62}`.
+   **None of this is derived from the uploaded dashboard.** This is precisely the
+   untrustworthy-number failure the product exists to critique — applied to ourselves. It is
+   the product's #1 credibility risk.
+2. **Insights are regex-scraped from prose.** [`ResultScreen.tsx:7-18`](../../frontend/src/components/ResultScreen.tsx#L7-L18)
+   `parseInsights()` pulls bullet lines out of free-form markdown — fragile, and the backend
+   prompt produces a long generic essay (the v1 root cause: starved skill + visual-first
+   weighting + Sonnet) that doesn't map cleanly to compact teaser bullets.
+
+The backend ([`feedback.ts`](../../backend/src/routes/feedback.ts)) returns prose; the data
+shape does not match what the UI actually needs.
 
 ## Goals
 
-- Professional, consultant-grade critique for **any** dashboard type.
-- DDIA / data-trust as the differentiator lens, with general UX coverage from the model.
-- **Maximum quality** is the priority; latency and cost are secondary (but tracked).
+- Scores (overall + 4 categories) and insights are produced by the **model**, **grounded in the
+  actual uploaded dashboard** — never keyword-derived, never hardcoded.
+- DDIA / data-trust lens powers the **Data Clarity** score and produces differentiated insights.
+- Compact **structured** output matching the teaser UI; **single-pass, lighter** processing.
 
 ## Non-Goals
 
-- Authoring a new general-UX knowledge base (the model already has this knowledge).
-- Switching off OpenRouter (decision: stay on OpenRouter).
-- Real-time / streaming UI rework beyond what the two-pass flow requires.
+- Long consultant report (wrong surface — dropped).
+- Two-pass / heavy pipeline (single-pass is enough for compact output).
+- Leaving OpenRouter (decision: stay on OpenRouter).
+- Redesigning the teaser visuals — the scorecard layout already exists; we change the *data*
+  feeding it and remove the client-side fabrication.
 
-## Architecture — Two-Pass Pipeline
+## Architecture — Single-Pass, Structured Output
 
 ```
 screenshot + optional context
    │
-   ▼  PASS 1 — Extract (vision)
-   │   "Observe, don't judge." → structured inventory JSON:
-   │   tiles[], numbers, data-source badges, timestamps, units,
-   │   window labels, visible states, domain/intent guess
+   ▼  ONE call — Sonnet 4.6 (skill + rubric + structure as system prompt)
+   │   model returns STRUCTURED JSON: 4 grounded category scores (+evidence) + ranked insights
    │
-   ▼  PASS 2 — Critique
-   │   inputs: inventory + screenshot + FULL skill (~2127 lines)
-   │           + output-structure instructions + golden exemplar
+   ▼  backend computes overall + verdict from the categories (fixed formula)
    │
-   ▼  DASHBOARD UX AUDIT (consultant-grade markdown)
+   ▼  AuditResult JSON → frontend renders scorecard + locked teaser
 ```
 
-**Why two-pass:** Pass 1 forces the model to *look* before it judges — this is what prevents
-the single-pass failure mode of skipping straight to generic opinions and missing concrete
-evidence (multi-source provenance, missing timestamps, ambiguous units). Pass 2 then reasons
-over an explicit evidence inventory rather than re-deriving it while also writing prose.
+## Output Schema (the contract)
 
-**Why not full pipeline:** chosen for the latency/cost/quality balance — two Opus calls
-(~6–10s, ~$0.15 warm) capture most of the per-lens-pipeline quality at a fraction of the
-wall-clock and spend.
+```ts
+// frontend/src/types.ts
+interface CategoryScore {
+  score: number      // 0–100, grounded in the screenshot
+  evidence: string   // why this score, citing specific visible elements (internal/debug;
+                     // not necessarily rendered to the client, but proves grounding)
+}
 
-## Model & Infrastructure
+interface Insight {
+  text: string                                                   // one concrete one-liner
+  category: 'ux' | 'visualDesign' | 'usability' | 'dataClarity'
+  sentiment: 'positive' | 'issue'
+  priority: number                                               // 1 = highest; drives ordering
+}
 
-- **Provider:** OpenRouter (unchanged). Endpoint: `POST /v1/chat/completions`.
-- **Model:** `anthropic/claude-opus-4-8` for both passes (was `anthropic/claude-sonnet-4-6`).
-  Configurable via `OPENROUTER_MODEL`.
-- **Prompt caching:** apply `cache_control: {type: "ephemeral"}` breakpoints on the static
-  prefix (full skill + structure instructions + exemplar) so repeat runs read it at ~0.1×.
-  OpenRouter passes Anthropic `cache_control` through. Static content first; volatile content
-  (screenshot, inventory, user context) after the last breakpoint.
-- **Structured output (Pass 1):** request the inventory as JSON. Primary path: explicit JSON
-  schema in the prompt + `response_format: {type: "json_object"}` if OpenRouter accepts it for
-  the model; **fallback:** parse JSON from the text response, tolerant of code-fence wrappers.
-  Degrade gracefully — never hard-fail the run on a structured-output quirk.
-- **Thinking/effort:** rely on prompt quality; pass OpenRouter reasoning params only if
-  confirmed supported. Do not block the design on them.
+interface AuditResult {
+  overall: number                  // computed in backend from categories
+  verdict: string                  // computed in backend from overall band
+  categories: {
+    ux: CategoryScore
+    visualDesign: CategoryScore
+    usability: CategoryScore
+    dataClarity: CategoryScore
+  }
+  insights: Insight[]              // ~12–16 items, ranked by priority
+}
 
-### Cost (per run, estimates)
+interface FeedbackState {
+  view: View
+  result: AuditResult | null       // replaces `feedback: string`
+  error: string | null
+}
+```
 
-| | Cold | Warm (cached prefix) |
-|---|---|---|
-| Two-pass, Opus 4.8 | ~$0.35 | ~$0.15 |
+The frontend shows the top `VISIBLE = 4` insights by `priority`; the remaining
+`insights.length − 4` are blurred behind the "N+ insights are locked" → Contact CTA.
+Insight selection is **top-priority mixed** (highest-priority items first, positive or issue).
 
-Prompt caching of the ~28k-token skill is the dominant cost lever — far more than model choice.
+## Grounding Rules — NO Fabrication (core requirement)
+
+This is the heart of v2. Enforced in the Pass prompt + schema + backend:
+
+1. **Every category score derives only from observable evidence in the screenshot**, and each
+   carries an `evidence` string citing specific visible elements — e.g. Data Clarity:
+   *"No 'as of' timestamp on any of the 6 tiles; reviews aggregated from Yelp + Facebook + Google
+   with no per-source freshness; 'Search Position 6,721' has no unit."* Evidence that doesn't name
+   visible elements is a failure.
+2. **A per-category rubric in the prompt** defines what each score band means against
+   observable criteria, so scores are reproducible rather than vibes. Data Clarity's rubric is
+   the DDIA lens (freshness indicators, provenance honesty, OLTP/OLAP framing, state coverage,
+   unit/label clarity).
+3. **Insights must reference a concrete visible element** — generic filler with no anchor
+   ("improve visual hierarchy") is banned by the prompt.
+4. **Overall is a fixed function of the four category scores, computed in backend code** — the
+   model never emits `overall` independently, removing that fabrication vector and guaranteeing
+   the overall is consistent with the parts. Formula (default): simple mean of the four,
+   rounded. (Weighting Data Clarity higher is an option; flagged as a product decision, default
+   = equal weights for honesty/transparency.)
+5. **If a category can't be assessed from the screenshot**, the model says so in `evidence` and
+   scores conservatively — it must not invent a number.
+6. **Backend never substitutes fabricated scores on failure.** If the model output can't be
+   parsed/validated after one retry, return an error — do **not** fall back to placeholder
+   numbers (the current `{78,24,71,62}` fallback is deleted).
+
+## Scoring Rubric (defined in the critique prompt)
+
+Each category gets band descriptions anchored to observable criteria:
+
+- **UX** — task flow, information scent, navigation clarity, entry point for the eye.
+- **Visual Design** — hierarchy, spacing, type scale, color use, chart-type fit.
+- **Usability** — affordances, control clarity, state visibility, error/empty handling visible.
+- **Data Clarity** *(the DDIA differentiator)* — freshness indicators, source provenance,
+  summary/detail consistency risk, OLTP/OLAP honesty, unit/label completeness, approximate-vs-exact.
 
 ## Knowledge Base
 
-Feed the **full existing skill** to Pass 2 as the data-trust knowledge layer:
+- **Restore the original `SKILL.md` content into `dashboard.md`** (replacing the edited
+  visual-first 86-line prompt) and feed the skill as the system-prompt knowledge layer. The
+  skill is what makes Data Clarity scoring + insights differentiated.
+- Given single-pass + Sonnet + compact output, the full 2127 lines may be more than needed.
+  **Decision for the plan:** start with `SKILL.md` + `reference/cheatsheet.md` +
+  `reference/patterns.md` (the operational core, ~600 lines) as the fed knowledge; add chapters
+  only if Data Clarity grounding proves weak in testing. (Caching makes either cheap; the
+  smaller feed keeps Sonnet focused.)
+- **Do NOT author a separate general-UX knowledge file** — UX/visual/usability knowledge comes
+  from the model itself.
+- **The prompt is the jargon firewall:** insights and evidence must be client-facing plain
+  language; the skill informs reasoning, not vocabulary.
+
+## Model & Infrastructure
+
+- **Provider:** OpenRouter (unchanged), `POST /v1/chat/completions`.
+- **Model:** `anthropic/claude-sonnet-4-6` (current), single call. Configurable via `OPENROUTER_MODEL`.
+- **Structured output:** request JSON; primary path `response_format: {type: "json_object"}` if
+  OpenRouter accepts it for the model + explicit schema in the prompt; **fallback:** tolerant
+  JSON parse from text (strip code fences). One retry on parse/validation failure, then error.
+- **Prompt caching:** `cache_control` breakpoint on the static prefix (skill + rubric +
+  schema/structure instructions); volatile content (screenshot, context) after it.
+
+### Cost (per run, estimate)
+
+Single Sonnet 4.6 call, ~10–20k input (knowledge + image) + ~1–2k JSON output ≈ **~$0.03 cold,
+~$0.01 warm**. Lighter than v1 by design.
+
+## Code Changes
+
+### Backend — [`feedback.ts`](../../backend/src/routes/feedback.ts)
+
+- One OpenRouter call. System = restored skill + critique/rubric/structure prompt (with
+  `cache_control`). User = image (+ optional context ≤ 200 chars, unchanged validation).
+- Parse model JSON → **validate** shape (4 categories present, each `score` 0–100 with non-empty
+  `evidence`; `insights` non-empty with required fields) → **compute `overall` + `verdict` in
+  code** → return `AuditResult`.
+- Errors: keep timeout/abort → 504; OpenRouter error → 502; parse/validation failure after one
+  retry → 502 with a clear message (never fabricated scores) → 500 otherwise.
+
+### Backend — new prompt files
 
 ```
 backend/src/skills/
-├── dashboard.md          ← REPLACED: was the edited 86-line prompt.
-│                            Becomes the original SKILL.md content (intro + 4 questions
-│                            + 7 mental models), OR is removed in favor of loading the
-│                            original skill text. (Decision in plan: restore original.)
-├── chapters/01..12.md    ← kept, fed in full
-└── reference/
-    ├── patterns.md       ← kept
-    ├── cheatsheet.md     ← kept
-    └── glossary.md       ← kept
+├── dashboard.md          ← REPLACED with original SKILL.md content
+├── chapters/, reference/ ← unchanged (reference/* fed; chapters optional per plan decision)
+└── prompts/
+    └── critique.md       ← rubric + output schema + grounding rules + jargon firewall
 ```
 
-- **Do NOT author `ux-heuristics.md`** — general UX/IA/a11y/typography knowledge comes from
-  the model itself.
-- The full skill carries backend jargon (replication, watermark, etc.). **Pass 2's prompt
-  is the jargon firewall:** it instructs client-facing plain language in the final output,
-  so the chapters inform the *reasoning* (depth, the "why") without leaking jargon to the client.
+### Frontend
 
-### New files
-
-```
-backend/src/skills/
-├── prompts/
-│   ├── extract.md        ← Pass 1 system prompt + inventory JSON schema
-│   └── critique.md       ← Pass 2 system prompt: output structure, tone, jargon firewall
-└── exemplars/
-    └── example-audit.md  ← one golden, consultant-grade audit as the quality target
-```
-
-## Output Structure (Consultant-Grade)
-
-Pass 2 produces this structure (adopted from the benchmark output the user validated):
-
-1. **Domain & Intent** — what the dashboard is, who it serves, and the data-infrastructure
-   lens (OLTP/OLAP, materialized views, batch vs. live, provenance).
-2. **Business Goal** — what the screen exists to accomplish; the user's core question.
-3. **Persona** — who reads this, their literacy, motivation, fear, cognitive-load tolerance,
-   context of use.
-4. **Pain Point Audit** — grouped: Critical Issues / Friction Points / Missed Opportunities.
-   Each: visible evidence → consequence → fix. Data-trust findings (freshness, provenance,
-   states, OLTP/OLAP honesty) appear here as first-class items when relevant.
-5. **Design Alternatives** — 2–3 named directions with their tradeoffs and the pattern each uses.
-6. **Recommendation** — what to do short-term vs. longer-horizon, including the product-strategy
-   take where one exists.
-
-Calibration: scale depth to the dashboard. A simple dashboard yields a shorter audit. On a
-non-data dashboard the data-trust lens yields fewer items — that is correct, not a gap.
-
-## Code Changes — `backend/src/routes/feedback.ts`
-
-Becomes a two-call orchestrator:
-
-1. Validate request (unchanged: `image`, `mediaType` allow-list, `context` ≤ 200 chars).
-2. **Load prompts + knowledge once at module load** (like the current `readFileSync`):
-   - `prompts/extract.md`, `prompts/critique.md`, `exemplars/example-audit.md`
-   - assembled full skill text (dashboard.md + chapters + reference).
-3. **Pass 1** → OpenRouter with `extract` system prompt + image. Parse inventory JSON
-   (with fallback parser).
-4. **Pass 2** → OpenRouter with `critique` system prompt (skill + structure + exemplar, with
-   `cache_control`) + a user message carrying the inventory + image + optional context.
-5. Return `{ feedback }` (the Pass 2 markdown), unchanged response shape so the frontend is
-   untouched.
-
-### Error handling
-
-- Reuse current per-request timeout/abort (raise budget to ~90s for two calls). Return 504 on
-  abort, 502 on OpenRouter error, 500 otherwise — matching existing semantics.
-- **Pass 1 failure is recoverable:** if extraction fails or returns unparseable JSON, fall
-  back to a single-pass critique (Pass 2 with the screenshot but no inventory) rather than
-  erroring. Log the degradation.
-- Never silently truncate inputs.
+- [`types.ts`](../../frontend/src/types.ts): replace `feedback: string` with `result: AuditResult | null`
+  and add the `AuditResult` / `CategoryScore` / `Insight` types above.
+- [`ResultScreen.tsx`](../../frontend/src/components/ResultScreen.tsx):
+  - **DELETE `deriveScores()` and `parseInsights()`** (the fabrication + the regex).
+  - **DELETE the hardcoded `{78,24,71,62}` fallback.**
+  - Render `overall`, `verdict`, the 4 `categories[*].score`, and `insights` from the
+    structured `result`. Sort `insights` by `priority`; show top 4, lock the rest.
+  - Download report: serialize the structured result to a readable text/markdown form.
+- [`App.tsx`](../../frontend/src/App.tsx), `LoadingScreen`, `UploadScreen`: adjust to the
+  `result` response shape (was `feedback` string).
 
 ## Testing
 
-Extend [`feedback.test.ts`](../../backend/src/routes/feedback.test.ts) (currently mocks one
-`fetch`). New coverage:
+### Backend ([`feedback.test.ts`](../../backend/src/routes/feedback.test.ts))
 
-- Two `fetch` calls happen, in order (extract → critique).
-- The critique call's system content includes the full skill (assert on a known
-  patterns/chapters phrase, not just non-empty).
-- The critique call carries the Pass-1 inventory in the user message.
-- `cache_control` breakpoint present on the static prefix of the critique call.
-- Inventory JSON parse + fallback parser (code-fence-wrapped JSON).
-- Pass-1 failure → single-pass fallback still returns 200 with feedback.
-- Existing validation/timeout/error tests updated for the two-call shape.
+- On a mocked model JSON response, the endpoint returns a validated `AuditResult`.
+- `overall` is computed correctly from the four category scores (e.g. mean), and `verdict` maps
+  to the right band.
+- Each category in the response has a non-empty `evidence` string and a 0–100 `score`.
+- **Parse/validation failure → 502 with an error, and NO fabricated scores in the body** (the
+  anti-fabrication guarantee).
+- Existing validation/timeout/error tests updated for the structured shape.
+
+### Frontend ([`ResultScreen.test.tsx`](../../frontend/src/components/ResultScreen.test.tsx))
+
+- Given an `AuditResult`, renders overall, the 4 category scores, and the top-4 insights by
+  priority; locks the remainder with the Contact CTA.
+- **Regression guard:** the component contains no score-deriving / insight-parsing logic — it
+  only renders provided data (assert scores come from props, not from text).
 
 ## Open Decisions for the Plan
 
-- Exact `dashboard.md` handling: restore the original SKILL.md text vs. load the upstream
-  skill verbatim. (Lean: restore original SKILL.md content into `dashboard.md`.)
-- Whether to include all 12 chapters or a curated subset if token budget/caching argues for it
-  (default: all 12 — caching makes the cost negligible).
-- Final source for the golden exemplar (the validated PatientPop benchmark, lightly edited).
+- **Overall formula:** default simple mean of the four categories; weighting Data Clarity higher
+  is a product option (default = equal weights).
+- **Knowledge feed size:** start with `SKILL.md` + `cheatsheet.md` + `patterns.md`; add chapters
+  if Data Clarity grounding is weak.
+- **Insight count target:** ~12–16 total so "N+ locked" reads credibly (≥ 8 locked).
 
 ## Success Criteria
 
-- On the PatientPop benchmark screenshot, output matches the consultant-grade structure and
-  surfaces the data-trust findings (freshness, multi-source provenance, OLTP/OLAP, states)
-  **and** persona + design alternatives + product-strategy recommendation.
-- On a simple non-data dashboard, output stays proportionate and does not manufacture
-  data-trust findings.
-- Frontend requires no change (response shape preserved).
+- Change the uploaded dashboard → the scores change accordingly; every category score traces to
+  a visible-element `evidence` string. No hardcoded or keyword-derived numbers remain anywhere
+  in the codebase.
+- Insights are concrete (each anchored to a visible element) and ranked; Data Clarity reflects
+  real DDIA findings (freshness/provenance/units/states).
+- The teaser UI is populated entirely from model output; `deriveScores`/`parseInsights` are gone.
