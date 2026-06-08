@@ -5,6 +5,9 @@ import LoadingScreen from './components/LoadingScreen'
 import ResultScreen from './components/ResultScreen'
 
 const MOCK = import.meta.env.DEV && typeof location !== 'undefined' && location.search.includes('preview=result')
+// Dev-only preview fixture (gated by `import.meta.env.DEV`, tree-shaken out of production
+// builds). These are static sample numbers for ?preview=result — NOT real scores. Real scores
+// always come from the model via /api/feedback; the app never fabricates or hardcodes them.
 const MOCK_RESULT: AuditResult = {
   overall: 47,
   verdict: 'Below industry average',
