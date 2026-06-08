@@ -31,6 +31,21 @@ describe('POST /api/feedback — validation', () => {
     expect(res.status).toBe(400)
     expect(res.body.error).toBe('mediaType must be image/png, image/jpeg, or image/webp')
   })
+
+  it('returns 400 when mediaType is missing', async () => {
+    const res = await request(app).post('/api/feedback').send({ image: 'abc123' })
+    expect(res.status).toBe(400)
+    expect(res.body.error).toBe('mediaType must be image/png, image/jpeg, or image/webp')
+  })
+
+  it('accepts image/jpeg as a valid mediaType (not a 400)', async () => {
+    const spy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+      { ok: true, json: async () => ({ choices: [{ message: { content: MODEL_JSON } }] }) } as Response
+    )
+    const res = await request(app).post('/api/feedback').send({ image: 'abc', mediaType: 'image/jpeg' })
+    expect(res.status).not.toBe(400)
+    spy.mockRestore()
+  })
 })
 
 describe('POST /api/feedback — structured audit', () => {
@@ -102,5 +117,15 @@ describe('POST /api/feedback — structured audit', () => {
     const res = await request(app).post('/api/feedback').send({ image: 'abc', mediaType: 'image/png' })
     expect(res.status).toBe(504)
     expect(res.body.error).toBe('The analysis took too long. Please try again.')
+  })
+
+  it('truncates context to 200 chars before sending to the model', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(okModelResponse(MODEL_JSON))
+    await request(app).post('/api/feedback').send({ image: 'abc', mediaType: 'image/png', context: 'x'.repeat(300) })
+    const body = JSON.parse((vi.mocked(fetch).mock.calls[0][1] as RequestInit).body as string)
+    const user = body.messages.find((m: any) => m.role === 'user')
+    const text = user.content.find((b: any) => b.type === 'text').text
+    expect(text).toContain('x'.repeat(200))
+    expect(text).not.toContain('x'.repeat(201))
   })
 })
