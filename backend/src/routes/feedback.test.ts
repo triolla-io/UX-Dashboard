@@ -31,7 +31,6 @@ describe('POST /api/feedback — validation', () => {
     const res = await request(app)
       .post('/api/feedback')
       .send({ image: 'abc123', mediaType: 'image/jpeg' })
-    // Should not be a 400 validation error (will 500/502 without real API key — that's fine)
-    expect(res.status).not.toBe(400)
+    expect(res.status).toBe(501)
   })
 })
