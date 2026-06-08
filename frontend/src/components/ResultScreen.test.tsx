@@ -1,73 +1,56 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import ResultScreen from './ResultScreen'
+import type { AuditResult } from '../types'
+
+const result: AuditResult = {
+  overall: 47,
+  verdict: 'Below industry average',
+  categories: {
+    ux: { score: 72, evidence: 'e' },
+    visualDesign: { score: 40, evidence: 'e' },
+    usability: { score: 55, evidence: 'e' },
+    dataClarity: { score: 22, evidence: 'e' },
+  },
+  insights: [
+    { text: 'Visible one A', category: 'ux', sentiment: 'positive', priority: 2 },
+    { text: 'Visible one B', category: 'dataClarity', sentiment: 'issue', priority: 1 },
+    { text: 'Visible one C', category: 'usability', sentiment: 'issue', priority: 3 },
+    { text: 'Visible one D', category: 'visualDesign', sentiment: 'positive', priority: 4 },
+    { text: 'Locked one E', category: 'ux', sentiment: 'issue', priority: 5 },
+    { text: 'Locked one F', category: 'ux', sentiment: 'issue', priority: 6 },
+  ],
+}
 
 describe('ResultScreen', () => {
-  it('displays feedback text', () => {
-    render(<ResultScreen feedback="Great layout!" error={null} onReset={vi.fn()} />)
-    expect(screen.getByTestId('feedback-text')).toHaveTextContent('Great layout!')
+  it('renders the overall verdict and the four category scores', () => {
+    render(<ResultScreen result={result} error={null} onReset={vi.fn()} />)
+    expect(screen.getByText('Below industry average')).toBeInTheDocument()
+    expect(screen.getByText('72')).toBeInTheDocument()
+    expect(screen.getByText('40')).toBeInTheDocument()
+    expect(screen.getByText('55')).toBeInTheDocument()
+    expect(screen.getByText('22')).toBeInTheDocument()
   })
 
-  it('shows download button when no error is present', () => {
-    render(<ResultScreen feedback="Great layout!" error={null} onReset={vi.fn()} />)
-    expect(screen.getByTestId('download-button')).toBeInTheDocument()
+  it('shows the four highest-priority insights and locks the rest', () => {
+    render(<ResultScreen result={result} error={null} onReset={vi.fn()} />)
+    const visible = screen.getAllByTestId('visible-insight')
+    expect(visible).toHaveLength(4)
+    expect(visible[0]).toHaveTextContent('Visible one B') // priority 1
+    expect(screen.getByText(/insights are locked/)).toHaveTextContent('2+ insights are locked')
   })
 
-  it('does not show download button when error is present', () => {
-    render(<ResultScreen feedback="" error="Something went wrong." onReset={vi.fn()} />)
+  it('shows an error and hides the report when error is present', () => {
+    render(<ResultScreen result={null} error="Something went wrong." onReset={vi.fn()} />)
+    expect(screen.getByRole('alert')).toHaveTextContent('Something went wrong.')
     expect(screen.queryByTestId('download-button')).not.toBeInTheDocument()
   })
 
-  it('shows error message when error is present', () => {
-    render(
-      <ResultScreen feedback="" error="Something went wrong. Please try again later." onReset={vi.fn()} />
-    )
-    expect(screen.getByRole('alert')).toHaveTextContent(
-      'Something went wrong. Please try again later.'
-    )
-  })
-
-  it('calls onReset when Start Over is clicked', async () => {
+  it('calls onReset when the reset button is clicked', async () => {
     const onReset = vi.fn()
-    render(<ResultScreen feedback="feedback" error={null} onReset={onReset} />)
+    render(<ResultScreen result={result} error={null} onReset={onReset} />)
     await userEvent.click(screen.getByTestId('reset-button'))
     expect(onReset).toHaveBeenCalledOnce()
-  })
-
-  it('triggers file download with correct filename format when Download TXT is clicked', async () => {
-    vi.useFakeTimers()
-    const createObjectURL = vi.fn().mockReturnValue('blob:mock')
-    const revokeObjectURL = vi.fn()
-    const clickFn = vi.fn()
-
-    vi.stubGlobal('URL', { createObjectURL, revokeObjectURL })
-
-    const createElement = document.createElement.bind(document)
-    vi.spyOn(document, 'createElement').mockImplementation((tag) => {
-      const el = createElement(tag)
-      if (tag === 'a') {
-        Object.defineProperty(el, 'click', { value: clickFn })
-      }
-      return el
-    })
-
-    render(<ResultScreen feedback="My feedback" error={null} onReset={vi.fn()} />)
-    fireEvent.click(screen.getByTestId('download-button'))
-
-    expect(createObjectURL).toHaveBeenCalledOnce()
-    expect(clickFn).toHaveBeenCalledOnce()
-
-    vi.runAllTimers()
-    expect(revokeObjectURL).toHaveBeenCalledOnce()
-
-    const anchor = (document.createElement as any).mock.results.find(
-      (r: any) => r.value.tagName === 'A'
-    )?.value
-    expect(anchor?.download).toMatch(/^dashboard-feedback-.+\.txt$/)
-
-    vi.useRealTimers()
-    vi.restoreAllMocks()
-    vi.unstubAllGlobals()
   })
 })
