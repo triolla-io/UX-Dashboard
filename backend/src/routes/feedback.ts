@@ -6,6 +6,11 @@ const router = Router()
 
 const ALLOWED_MEDIA_TYPES = ['image/png', 'image/jpeg', 'image/webp']
 
+const skillContent = readFileSync(
+  path.resolve(__dirname, '../skills/dashboard.md'),
+  'utf-8'
+)
+
 router.post('/', async (req: Request, res: Response) => {
   const { image, mediaType, context } = req.body
 
@@ -14,16 +19,6 @@ router.post('/', async (req: Request, res: Response) => {
   }
   if (!ALLOWED_MEDIA_TYPES.includes(mediaType)) {
     return res.status(400).json({ error: 'mediaType must be image/png, image/jpeg, or image/webp' })
-  }
-
-  let skillContent: string
-  try {
-    skillContent = readFileSync(
-      path.resolve(__dirname, '../skills/dashboard.md'),
-      'utf-8'
-    )
-  } catch {
-    return res.status(500).json({ error: 'Skill file not found' })
   }
 
   const contextText = context ? String(context).slice(0, 200) : ''
@@ -61,23 +56,23 @@ router.post('/', async (req: Request, res: Response) => {
     clearTimeout(timeoutId)
 
     if (!response.ok) {
-      const errData = await response.json().catch(() => ({}))
+      const errData = await response.json().catch(() => ({})) as { error?: { message?: string } }
       return res
         .status(502)
-        .json({ error: (errData as any).error?.message || 'OpenRouter error' })
+        .json({ error: errData.error?.message || 'OpenRouter error' })
     }
 
     const data = (await response.json()) as any
-    const feedback: string = data.choices?.[0]?.message?.content
+    const feedback: string | undefined = data.choices?.[0]?.message?.content
 
     if (!feedback) {
       return res.status(502).json({ error: 'No feedback returned from model' })
     }
 
     return res.json({ feedback })
-  } catch (e: any) {
+  } catch (e) {
     clearTimeout(timeoutId)
-    if (e.name === 'AbortError') {
+    if (e instanceof Error && e.name === 'AbortError') {
       return res
         .status(504)
         .json({ error: 'The analysis took too long. Please try again.' })
