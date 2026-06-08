@@ -48,7 +48,7 @@ describe('UploadScreen', () => {
   it('truncates context input to 200 characters', async () => {
     render(<UploadScreen onSubmit={vi.fn()} />)
     const input = screen.getByTestId('context-input')
-    await userEvent.type(input, 'a'.repeat(250))
+    await userEvent.type(input, 'a'.repeat(201))
     expect((input as HTMLTextAreaElement).value).toHaveLength(200)
   })
 
