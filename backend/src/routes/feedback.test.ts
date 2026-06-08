@@ -73,8 +73,28 @@ describe('POST /api/feedback — OpenRouter integration', () => {
       .send({ image: 'abc123', mediaType: 'image/png', context: 'fintech SaaS' })
 
     const body = JSON.parse((vi.mocked(fetch).mock.calls[0][1] as RequestInit).body as string)
-    const textBlock = body.messages[0].content.find((b: any) => b.type === 'text')
+    const userMessage = body.messages.find((m: any) => m.role === 'user')
+    const textBlock = userMessage.content.find((b: any) => b.type === 'text')
     expect(textBlock.text).toContain('Context: fintech SaaS')
+  })
+
+  it('sends the skill as a system message', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        choices: [{ message: { content: 'Feedback' } }],
+      }),
+    } as Response)
+
+    await request(app)
+      .post('/api/feedback')
+      .send({ image: 'abc123', mediaType: 'image/png' })
+
+    const body = JSON.parse((vi.mocked(fetch).mock.calls[0][1] as RequestInit).body as string)
+    const systemMessage = body.messages.find((m: any) => m.role === 'system')
+    expect(systemMessage).toBeTruthy()
+    expect(typeof systemMessage.content).toBe('string')
+    expect(systemMessage.content.length).toBeGreaterThan(0)
   })
 
   it('sends image as data URI in image_url block', async () => {
@@ -90,7 +110,8 @@ describe('POST /api/feedback — OpenRouter integration', () => {
       .send({ image: 'abc123', mediaType: 'image/png' })
 
     const body = JSON.parse((vi.mocked(fetch).mock.calls[0][1] as RequestInit).body as string)
-    const imageBlock = body.messages[0].content.find((b: any) => b.type === 'image_url')
+    const userMessage = body.messages.find((m: any) => m.role === 'user')
+    const imageBlock = userMessage.content.find((b: any) => b.type === 'image_url')
     expect(imageBlock.image_url.url).toBe('data:image/png;base64,abc123')
   })
 
@@ -135,7 +156,8 @@ describe('POST /api/feedback — OpenRouter integration', () => {
       .send({ image: 'abc123', mediaType: 'image/png', context: longContext })
 
     const body = JSON.parse((vi.mocked(fetch).mock.calls[0][1] as RequestInit).body as string)
-    const textBlock = body.messages[0].content.find((b: any) => b.type === 'text')
+    const userMessage = body.messages.find((m: any) => m.role === 'user')
+    const textBlock = userMessage.content.find((b: any) => b.type === 'text')
     expect(textBlock.text).toContain('a'.repeat(200))
     expect(textBlock.text).not.toContain('a'.repeat(201))
   })

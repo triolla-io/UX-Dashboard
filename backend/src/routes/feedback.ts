@@ -36,8 +36,9 @@ router.post('/', async (req: Request, res: Response) => {
       },
       body: JSON.stringify({
         model: process.env.OPENROUTER_MODEL || 'anthropic/claude-sonnet-4-6',
-        system: skillContent,
+        max_tokens: 3000,
         messages: [
+          { role: 'system', content: skillContent },
           {
             role: 'user',
             content: [
