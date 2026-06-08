@@ -14,16 +14,18 @@ export interface Insight {
   priority: number
 }
 
+export type Verdict = 'Above industry average' | 'Near industry average' | 'Below industry average'
+
 export interface AuditResult {
   overall: number
-  verdict: string
+  verdict: Verdict
   categories: Categories
   insights: Insight[]
 }
 
 export const CATEGORY_KEYS: InsightCategory[] = ['ux', 'visualDesign', 'usability', 'dataClarity']
 
-export function verdictForScore(score: number): string {
+export function verdictForScore(score: number): Verdict {
   if (score >= 75) return 'Above industry average'
   if (score >= 55) return 'Near industry average'
   return 'Below industry average'

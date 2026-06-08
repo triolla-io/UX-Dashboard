@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { verdictForScore, computeOverall, type Categories } from './audit'
-import { parseAuditJson, validateAudit, buildAuditResult } from './audit'
+import { verdictForScore, computeOverall, type Categories, parseAuditJson, validateAudit, buildAuditResult } from './audit'
 
 const cats = (ux: number, vd: number, us: number, dc: number): Categories => ({
   ux: { score: ux, evidence: 'e' },
@@ -13,12 +12,15 @@ describe('verdictForScore', () => {
   it('returns Above for >= 75', () => expect(verdictForScore(75)).toBe('Above industry average'))
   it('returns Near for 55..74', () => expect(verdictForScore(60)).toBe('Near industry average'))
   it('returns Below for < 55', () => expect(verdictForScore(40)).toBe('Below industry average'))
+  it('returns Near for exactly 55', () => expect(verdictForScore(55)).toBe('Near industry average'))
 })
 
 describe('computeOverall', () => {
   it('is the rounded mean of the four category scores', () => {
     expect(computeOverall(cats(72, 40, 55, 22))).toBe(47) // 189/4 = 47.25 -> 47
   })
+  it('returns 0 for all-zero categories', () => expect(computeOverall(cats(0, 0, 0, 0))).toBe(0))
+  it('returns 100 for all-max categories', () => expect(computeOverall(cats(100, 100, 100, 100))).toBe(100))
 })
 
 const validModel = {
@@ -77,5 +79,11 @@ describe('buildAuditResult', () => {
     expect(r.verdict).toBe('Below industry average')
     expect(r.categories.ux.score).toBe(72)
     expect(r.insights[0].priority).toBe(1)
+  })
+  it('ignores any model-provided overall/verdict and recomputes them', () => {
+    const withFake = { ...validModel, overall: 99, verdict: 'Above industry average' }
+    const r = buildAuditResult(withFake)
+    expect(r.overall).toBe(47)
+    expect(r.verdict).toBe('Below industry average')
   })
 })
