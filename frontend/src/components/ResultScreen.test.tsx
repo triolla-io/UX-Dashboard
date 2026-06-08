@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { describe, it, expect, vi } from 'vitest'
+import { render, screen, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import ResultScreen from './ResultScreen'
 
@@ -9,7 +9,7 @@ describe('ResultScreen', () => {
     expect(screen.getByTestId('feedback-text')).toHaveTextContent('Great layout!')
   })
 
-  it('shows download button when feedback is present', () => {
+  it('shows download button when no error is present', () => {
     render(<ResultScreen feedback="Great layout!" error={null} onReset={vi.fn()} />)
     expect(screen.getByTestId('download-button')).toBeInTheDocument()
   })
@@ -36,6 +36,7 @@ describe('ResultScreen', () => {
   })
 
   it('triggers file download with correct filename format when Download TXT is clicked', async () => {
+    vi.useFakeTimers()
     const createObjectURL = vi.fn().mockReturnValue('blob:mock')
     const revokeObjectURL = vi.fn()
     const clickFn = vi.fn()
@@ -52,16 +53,20 @@ describe('ResultScreen', () => {
     })
 
     render(<ResultScreen feedback="My feedback" error={null} onReset={vi.fn()} />)
-    await userEvent.click(screen.getByTestId('download-button'))
+    fireEvent.click(screen.getByTestId('download-button'))
 
     expect(createObjectURL).toHaveBeenCalledOnce()
     expect(clickFn).toHaveBeenCalledOnce()
+
+    vi.runAllTimers()
+    expect(revokeObjectURL).toHaveBeenCalledOnce()
 
     const anchor = (document.createElement as any).mock.results.find(
       (r: any) => r.value.tagName === 'A'
     )?.value
     expect(anchor?.download).toMatch(/^dashboard-feedback-.+\.txt$/)
 
+    vi.useRealTimers()
     vi.restoreAllMocks()
     vi.unstubAllGlobals()
   })

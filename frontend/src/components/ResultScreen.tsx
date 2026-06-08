@@ -12,8 +12,10 @@ export default function ResultScreen({ feedback, error, onReset }: Props) {
     const a = document.createElement('a')
     a.href = url
     a.download = `dashboard-feedback-${timestamp}.txt`
+    document.body.appendChild(a)
     a.click()
-    URL.revokeObjectURL(url)
+    document.body.removeChild(a)
+    setTimeout(() => URL.revokeObjectURL(url), 0)
   }
 
   return (
