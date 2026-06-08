@@ -21,17 +21,32 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ image, mediaType, context }),
       })
-      const data = await res.json()
+
+      const raw = await res.text()
+      let data: { feedback?: string; error?: string } = {}
+      if (raw) {
+        try {
+          data = JSON.parse(raw)
+        } catch {
+          throw new Error(
+            'The analysis service returned an unexpected response. Please make sure the server is running and try again.'
+          )
+        }
+      }
+
       if (!res.ok) {
         throw new Error(data.error || 'Something went wrong. Please try again later.')
       }
+      if (!data.feedback) {
+        throw new Error('The analysis service did not return any feedback. Please try again.')
+      }
       setState({ view: 'result', feedback: data.feedback, error: null })
     } catch (e) {
-      setState({
-        view: 'result',
-        feedback: '',
-        error: (e as Error).message,
-      })
+      const message =
+        e instanceof TypeError
+          ? 'Could not reach the analysis service. Please make sure the server is running and try again.'
+          : (e as Error).message
+      setState({ view: 'result', feedback: '', error: message })
     }
   }
 

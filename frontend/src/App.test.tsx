@@ -29,7 +29,7 @@ describe('App integration', () => {
       expect(screen.getByRole('status')).toBeInTheDocument()
     })
 
-    resolveFetch({ ok: true, json: async () => ({ feedback: 'Looking good!' }) })
+    resolveFetch({ ok: true, text: async () => JSON.stringify({ feedback: 'Looking good!' }) })
 
     await waitFor(() => {
       expect(screen.getByTestId('feedback-text')).toHaveTextContent('Looking good!')
@@ -39,7 +39,7 @@ describe('App integration', () => {
   it('shows error in result screen when API returns error', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: false,
-      json: async () => ({ error: 'Something went wrong. Please try again later.' }),
+      text: async () => JSON.stringify({ error: 'Something went wrong. Please try again later.' }),
     }))
 
     render(<App />)
@@ -58,7 +58,7 @@ describe('App integration', () => {
   it('returns to upload screen when Start Over is clicked', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: true,
-      json: async () => ({ feedback: 'Good work!' }),
+      text: async () => JSON.stringify({ feedback: 'Good work!' }),
     }))
 
     render(<App />)
