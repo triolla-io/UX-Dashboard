@@ -4,6 +4,18 @@ import userEvent from '@testing-library/user-event'
 import App from './App'
 
 describe('App integration', () => {
+  const AUDIT = {
+    overall: 47,
+    verdict: 'Below industry average',
+    categories: {
+      ux: { score: 72, evidence: 'e' },
+      visualDesign: { score: 40, evidence: 'e' },
+      usability: { score: 55, evidence: 'e' },
+      dataClarity: { score: 22, evidence: 'e' },
+    },
+    insights: [{ text: 'No freshness timestamp on tiles', category: 'dataClarity', sentiment: 'issue', priority: 1 }],
+  }
+
   afterEach(() => {
     vi.unstubAllGlobals()
     vi.restoreAllMocks()
@@ -20,20 +32,15 @@ describe('App integration', () => {
     vi.stubGlobal('fetch', vi.fn().mockReturnValue(pending))
 
     render(<App />)
-
     const file = new File(['img'], 'shot.png', { type: 'image/png' })
     await userEvent.upload(screen.getByTestId('file-input'), file)
     await userEvent.click(screen.getByTestId('submit-button'))
 
-    await waitFor(() => {
-      expect(screen.getByRole('status')).toBeInTheDocument()
-    })
+    await waitFor(() => expect(screen.getByRole('status')).toBeInTheDocument())
 
-    resolveFetch({ ok: true, text: async () => JSON.stringify({ feedback: 'Looking good!' }) })
+    resolveFetch({ ok: true, text: async () => JSON.stringify(AUDIT) })
 
-    await waitFor(() => {
-      expect(screen.getByTestId('feedback-text')).toHaveTextContent('Looking good!')
-    })
+    await waitFor(() => expect(screen.getByText('Below industry average')).toBeInTheDocument())
   })
 
   it('shows error in result screen when API returns error', async () => {
@@ -58,21 +65,16 @@ describe('App integration', () => {
   it('returns to upload screen when Start Over is clicked', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: true,
-      text: async () => JSON.stringify({ feedback: 'Good work!' }),
+      text: async () => JSON.stringify(AUDIT),
     }))
 
     render(<App />)
-
     const file = new File(['img'], 'shot.png', { type: 'image/png' })
     await userEvent.upload(screen.getByTestId('file-input'), file)
     await userEvent.click(screen.getByTestId('submit-button'))
 
-    await waitFor(() => {
-      expect(screen.getByTestId('reset-button')).toBeInTheDocument()
-    })
-
+    await waitFor(() => expect(screen.getByTestId('reset-button')).toBeInTheDocument())
     await userEvent.click(screen.getByTestId('reset-button'))
-
     expect(screen.getByTestId('submit-button')).toBeInTheDocument()
   })
 })
