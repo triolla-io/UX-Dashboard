@@ -1314,7 +1314,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  filter: blur(2px);
+  filter: blur(5px);
   pointer-events: none;
   user-select: none;
   padding-top: 6px;
