@@ -1474,6 +1474,21 @@ body {
   }
 }
 
+@media (max-width: 640px) {
+  .insights-locked-wrap {
+    min-height: 180px;
+  }
+
+  .insights-locked-list .insight-item:nth-child(n+4) {
+    display: none;
+  }
+
+  .insights-locked-overlay {
+    justify-content: flex-end;
+    padding-bottom: 28px;
+  }
+}
+
 @media (max-width: 480px) {
   .top-banner {
     font-size: 12px;
