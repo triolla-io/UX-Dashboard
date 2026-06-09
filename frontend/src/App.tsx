@@ -4,7 +4,10 @@ import UploadScreen from './components/UploadScreen'
 import LoadingScreen from './components/LoadingScreen'
 import ResultScreen from './components/ResultScreen'
 
-const MOCK = import.meta.env.DEV && typeof location !== 'undefined' && location.search.includes('preview=result')
+const PREVIEW = import.meta.env.DEV && typeof location !== 'undefined'
+  ? new URLSearchParams(location.search).get('preview')
+  : null
+const MOCK = PREVIEW === 'result'
 // Dev-only preview fixture (gated by `import.meta.env.DEV`, tree-shaken out of production
 // builds). These are static sample numbers for ?preview=result — NOT real scores. Real scores
 // always come from the model via /api/feedback; the app never fabricates or hardcodes them.
@@ -28,7 +31,7 @@ const MOCK_RESULT: AuditResult = {
 }
 
 const initialState: FeedbackState = {
-  view: MOCK ? 'result' : 'upload',
+  view: PREVIEW === 'loading' ? 'loading' : MOCK ? 'result' : 'upload',
   result: MOCK ? MOCK_RESULT : null,
   error: null,
 }

@@ -56,10 +56,11 @@ export function validateAudit(obj: unknown): { categories: Categories; insights:
     if (!c || typeof c.score !== 'number' || c.score < 0 || c.score > 100) {
       throw new Error(`audit: invalid score for ${k}`)
     }
-    if (typeof c.evidence !== 'string' || c.evidence.trim().length === 0) {
+    const rawEvidence = Array.isArray(c.evidence) ? c.evidence[0] : c.evidence
+    if (typeof rawEvidence !== 'string' || rawEvidence.trim().length === 0) {
       throw new Error(`audit: missing evidence for ${k}`)
     }
-    categories[k] = { score: Math.round(c.score), evidence: c.evidence.trim() }
+    categories[k] = { score: Math.round(c.score), evidence: rawEvidence.trim() }
   }
 
   if (!Array.isArray(o.insights) || o.insights.length === 0) {

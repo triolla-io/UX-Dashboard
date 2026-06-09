@@ -23,10 +23,10 @@ describe('App integration', () => {
 
   it('renders upload screen initially', () => {
     render(<App />)
-    expect(screen.getByTestId('submit-button')).toBeInTheDocument()
+    expect(screen.getByTestId('dropzone')).toBeInTheDocument()
   })
 
-  it('shows loading screen after submit, then result on success', async () => {
+  it('shows loading screen after file selection, then result on success', async () => {
     let resolveFetch!: (v: any) => void
     const pending = new Promise((r) => { resolveFetch = r })
     vi.stubGlobal('fetch', vi.fn().mockReturnValue(pending))
@@ -34,7 +34,6 @@ describe('App integration', () => {
     render(<App />)
     const file = new File(['img'], 'shot.png', { type: 'image/png' })
     await userEvent.upload(screen.getByTestId('file-input'), file)
-    await userEvent.click(screen.getByTestId('submit-button'))
 
     await waitFor(() => expect(screen.getByRole('status')).toBeInTheDocument())
 
@@ -50,10 +49,8 @@ describe('App integration', () => {
     }))
 
     render(<App />)
-
     const file = new File(['img'], 'shot.png', { type: 'image/png' })
     await userEvent.upload(screen.getByTestId('file-input'), file)
-    await userEvent.click(screen.getByTestId('submit-button'))
 
     await waitFor(() => {
       expect(screen.getByRole('alert')).toHaveTextContent(
@@ -71,10 +68,9 @@ describe('App integration', () => {
     render(<App />)
     const file = new File(['img'], 'shot.png', { type: 'image/png' })
     await userEvent.upload(screen.getByTestId('file-input'), file)
-    await userEvent.click(screen.getByTestId('submit-button'))
 
     await waitFor(() => expect(screen.getByTestId('reset-button')).toBeInTheDocument())
     await userEvent.click(screen.getByTestId('reset-button'))
-    expect(screen.getByTestId('submit-button')).toBeInTheDocument()
+    expect(screen.getByTestId('dropzone')).toBeInTheDocument()
   })
 })

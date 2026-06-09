@@ -1,4 +1,11 @@
 import { useState, useRef, DragEvent, ChangeEvent } from 'react'
+import uploadIcon from '../assests/upload.svg'
+import uploadIconHover from '../assests/upload_hover.svg'
+import avatarImg from '../assests/avatar.png'
+import welcomeImg from '../assests/welcome.png'
+import starIcon from '../assests/star.svg'
+import triollaLogo from '../assests/triolla.svg'
+import sparkIcon from '../assests/spark.svg'
 
 interface Props {
   onSubmit: (image: string, mediaType: string, context: string) => void
@@ -17,76 +24,182 @@ function validateFile(file: File): string | null {
   return null
 }
 
+const SEGMENTS = [
+  'Cybersecurity',
+  'Digital Health',
+  'Fintech & Finance',
+  'Gaming',
+  'Agritech',
+  'B2C',
+  'Devices & IoT',
+  'Startups & Tech',
+  'Mobile Apps',
+  'SaaS Platforms',
+  'B2B',
+  'Dev',
+]
+
 export default function UploadScreen({ onSubmit }: Props) {
-  const [file, setFile] = useState<File | null>(null)
-  const [context, setContext] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [dragOver, setDragOver] = useState(false)
+  const [segment, setSegment] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const handleFile = (f: File) => {
+  const submitFile = (f: File) => {
     const err = validateFile(f)
-    setError(err)
-    setFile(err ? null : f)
-  }
-
-  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    const f = e.dataTransfer.files[0]
-    if (f) handleFile(f)
-  }
-
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0]
-    if (f) handleFile(f)
-  }
-
-  const handleSubmit = () => {
-    if (!file) return
+    if (err) { setError(err); return }
+    setError(null)
     const reader = new FileReader()
     reader.onload = () => {
       const dataUrl = reader.result as string
       const base64 = dataUrl.split(',')[1]
-      onSubmit(base64, file.type, context)
+      const context = segment ? `Industry segment: ${segment}` : ''
+      onSubmit(base64, f.type, context)
     }
-    reader.readAsDataURL(file)
+    reader.readAsDataURL(f)
+  }
+
+  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    setDragOver(false)
+    const f = e.dataTransfer.files[0]
+    if (f) submitFile(f)
+  }
+
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0]
+    if (f) submitFile(f)
   }
 
   return (
     <div>
-      <div
-        onDrop={handleDrop}
-        onDragOver={(e) => e.preventDefault()}
-        onClick={() => inputRef.current?.click()}
-        data-testid="dropzone"
-        style={{ border: '2px dashed #ccc', padding: '2rem', cursor: 'pointer' }}
-      >
-        {file ? file.name : 'Drop a screenshot here or click to browse'}
-        <input
-          ref={inputRef}
-          type="file"
-          onChange={handleChange}
-          style={{ display: 'none' }}
-          data-testid="file-input"
-        />
+      {/* Top Banner */}
+      <div className="top-banner">
+        <img src={sparkIcon} alt="" className="banner-spark" />
+        Triolla AI Enterprise Dashboard Intelligence
       </div>
 
-      {error && <p role="alert" style={{ color: 'red' }}>{error}</p>}
+      {/* Nav */}
+      <nav className="nav">
+        <img src={triollaLogo} alt="Triolla" className="nav-logo" />
+        <button className="nav-cta">Contact Us</button>
+      </nav>
 
-      <textarea
-        value={context}
-        onChange={(e) => setContext(e.target.value.slice(0, 200))}
-        placeholder="Describe the dashboard or its context (optional)"
-        maxLength={200}
-        data-testid="context-input"
-      />
+      {/* Hero */}
+      <section className="hero">
+        <div className="hero-avatar-group">
+          <img src={avatarImg} alt="" className="hero-avatar-img" />
+          <img src={welcomeImg} alt="Welcome!" className="hero-welcome-img" />
+        </div>
 
-      <button
-        onClick={handleSubmit}
-        disabled={!file}
-        data-testid="submit-button"
-      >
-        Get Feedback
-      </button>
+        <h1 className="hero-title">
+          Get an Instant UX Audit<br />of Your Dashboard
+        </h1>
+
+        <p className="hero-subtitle">
+          Upload a screenshot and get{' '}
+          <strong>Expert AI Analysis</strong>{' '}
+          trained on hundreds of enterprise dashboards
+        </p>
+
+        {/* Segment selector */}
+        <div className="segment-wrap">
+          <label className="segment-label">Choose your segment</label>
+          <select
+            className="segment-select"
+            value={segment}
+            onChange={e => setSegment(e.target.value)}
+          >
+            <option value="">Select industry…</option>
+            {SEGMENTS.map(s => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Dropzone — selecting/dropping a file auto-submits */}
+        <div
+          className={`dropzone-card${dragOver ? ' drag-over' : ''}`}
+          onDrop={handleDrop}
+          onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
+          onDragLeave={() => setDragOver(false)}
+          onClick={() => inputRef.current?.click()}
+          data-testid="dropzone"
+        >
+          <div className="dropzone-icon-stack">
+            <img src={uploadIcon} alt="" className="dropzone-icon dropzone-icon--rest" />
+            <img src={uploadIconHover} alt="" className="dropzone-icon dropzone-icon--hover" />
+          </div>
+          <div className="dropzone-text">
+            <p className="dropzone-label">Drop your dashboard screenshot</p>
+            <p className="dropzone-hint">or browse files — PNG, JPG, JPEG</p>
+          </div>
+          <input
+            ref={inputRef}
+            type="file"
+            onChange={handleChange}
+            style={{ display: 'none' }}
+            data-testid="file-input"
+          />
+        </div>
+
+        {error && (
+          <p role="alert" className="upload-error">{error}</p>
+        )}
+
+        <p className="trust-row">
+          Free <span>·</span> No Commitment <span>·</span> Results in &lt; 60s
+        </p>
+
+        <div className="feature-badges">
+          <div className="feature-badge">
+            <img src={starIcon} alt="" className="feature-badge-icon" /> SOC2-aware handling
+          </div>
+          <div className="feature-badge">
+            <img src={starIcon} alt="" className="feature-badge-icon" /> Screenshots only
+          </div>
+          <div className="feature-badge">
+            <img src={starIcon} alt="" className="feature-badge-icon" /> Senior designer review
+          </div>
+        </div>
+      </section>
+
+      {/* Why Triolla */}
+      <section className="why-section">
+        <h2 className="why-heading">Why Triolla?</h2>
+        <p className="why-sub">A practice built for enterprise dashboards</p>
+
+        <div className="stats-row">
+          <div className="stat-item">
+            <div className="stat-number">600+</div>
+            <div className="stat-label">Products Designed</div>
+          </div>
+          <div className="stat-item">
+            <div className="stat-number">250+</div>
+            <div className="stat-label">Cybersecurity Platforms</div>
+          </div>
+          <div className="stat-item">
+            <div className="stat-number">65</div>
+            <div className="stat-label">Expert Product Designers</div>
+          </div>
+          <div className="stat-item">
+            <div className="stat-number">15YR</div>
+            <div className="stat-label">Enterprise UX Practice</div>
+          </div>
+        </div>
+      </section>
+
+      {/* Banner */}
+      <section className="banner-section">
+        <div className="banner-wrap">
+          <img src="/src/assests/Banner.png" alt="Triolla clients and products" className="banner-img" />
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="footer">
+        <img src={triollaLogo} alt="Triolla" className="footer-logo" />
+      </footer>
     </div>
   )
 }

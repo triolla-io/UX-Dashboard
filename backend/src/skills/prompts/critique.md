@@ -54,10 +54,10 @@ an `overall` field — it is computed downstream.
 ```json
 {
   "categories": {
-    "ux":           { "score": 0, "evidence": "..." },
-    "visualDesign": { "score": 0, "evidence": "..." },
-    "usability":    { "score": 0, "evidence": "..." },
-    "dataClarity":  { "score": 0, "evidence": "..." }
+    "ux":           { "score": 0, "evidence": "ONE sentence string — not an array" },
+    "visualDesign": { "score": 0, "evidence": "ONE sentence string — not an array" },
+    "usability":    { "score": 0, "evidence": "ONE sentence string — not an array" },
+    "dataClarity":  { "score": 0, "evidence": "ONE sentence string — not an array" }
   },
   "insights": [
     { "text": "...", "category": "dataClarity", "sentiment": "issue", "priority": 1 }
