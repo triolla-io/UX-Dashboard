@@ -174,7 +174,6 @@ body {
   max-width: none;
   margin-bottom: 40px;
   line-height: 1.35;
-  white-space: nowrap;
 }
 
 .hero-subtitle strong {
@@ -1395,3 +1394,178 @@ body {
   font-size: 14px;
 }
 .feature-badges   { animation: fadeUp 0.55s ease both; animation-delay: 0.4s; }
+
+/* ─── RESPONSIVE ─────────────────────────────────── */
+@media (max-width: 768px) {
+  .nav {
+    padding: 12px 20px;
+  }
+
+  .hero {
+    padding: 36px 20px 52px;
+  }
+
+  /* decorative float — hides to avoid overlapping centered text */
+  .hero-avatar-group {
+    display: none;
+  }
+
+  .hero-subtitle {
+    font-size: clamp(15px, 3.5vw, 20px);
+  }
+
+  .feature-badges {
+    gap: 20px;
+  }
+
+  .feature-badge {
+    font-size: 16px;
+  }
+
+  .why-section {
+    padding: 56px 0 36px;
+  }
+
+  .why-heading {
+    padding: 0 24px;
+    letter-spacing: -1px;
+  }
+
+  .why-sub {
+    padding: 0 24px;
+    margin-bottom: 36px;
+  }
+
+  .stats-row {
+    gap: 32px;
+    padding: 0 24px;
+    margin-bottom: 40px;
+  }
+
+  .stat-number {
+    font-size: 48px;
+  }
+
+  .stat-label {
+    font-size: 16px;
+  }
+
+  .footer {
+    padding: 20px 24px;
+  }
+
+  .report-card {
+    padding: 24px 20px;
+  }
+
+  .report-overview {
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 20px;
+    text-align: center;
+  }
+
+  .score-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .top-banner {
+    font-size: 12px;
+    padding: 8px 12px;
+    height: auto;
+    min-height: 40px;
+  }
+
+  .nav {
+    padding: 12px 16px;
+  }
+
+  .hero {
+    padding: 28px 16px 44px;
+  }
+
+  .dropzone-card {
+    border-radius: 20px;
+    min-height: unset;
+    padding: 36px 20px;
+    gap: 24px;
+  }
+
+  .dropzone-label {
+    font-size: 20px;
+    margin-bottom: 10px;
+  }
+
+  .dropzone-hint {
+    font-size: 14px;
+  }
+
+  .segment-wrap {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .segment-select {
+    width: 100%;
+  }
+
+  .trust-row {
+    font-size: 13px;
+  }
+
+  .feature-badges {
+    gap: 14px;
+  }
+
+  .feature-badge {
+    font-size: 14px;
+  }
+
+  .stats-row {
+    gap: 20px;
+  }
+
+  .stat-number {
+    font-size: 40px;
+  }
+
+  .stat-label {
+    font-size: 14px;
+  }
+
+  .why-heading {
+    letter-spacing: -0.5px;
+  }
+
+  .score-cards {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding: 14px 0;
+  }
+
+  .score-card {
+    padding: 14px 12px;
+    gap: 10px;
+  }
+
+  .score-card-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .score-card-value {
+    font-size: 18px;
+  }
+
+  .report-card {
+    padding: 20px 16px;
+    border-radius: 18px;
+  }
+
+  .report-overview {
+    padding: 16px;
+  }
+}
