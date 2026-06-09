@@ -6,6 +6,7 @@ import welcomeImg from '../assests/welcome.png'
 import starIcon from '../assests/star.svg'
 import triollaLogo from '../assests/triolla.svg'
 import sparkIcon from '../assests/spark.svg'
+import bannerImg from '../assests/Banner.png'
 
 interface Props {
   onSubmit: (image: string, mediaType: string, context: string) => void
@@ -192,7 +193,7 @@ export default function UploadScreen({ onSubmit }: Props) {
       {/* Banner */}
       <section className="banner-section">
         <div className="banner-wrap">
-          <img src="/src/assests/Banner.png" alt="Triolla clients and products" className="banner-img" />
+          <img src={bannerImg} alt="Triolla clients and products" className="banner-img" />
         </div>
       </section>
 
