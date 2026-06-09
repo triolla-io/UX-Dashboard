@@ -20,8 +20,16 @@ const SYSTEM_PROMPT = [
 
 class OpenRouterError extends Error {}
 
-async function callModel(image: string, mediaType: string, contextText: string, signal: AbortSignal): Promise<string> {
+const FALLBACK_MODEL = 'anthropic/claude-sonnet-4-6'
+
+function looksLikeRefusal(content: string): boolean {
+  const t = content.trimStart()
+  return !t.startsWith('{') && !t.startsWith('`')
+}
+
+async function callModel(image: string, mediaType: string, contextText: string, signal: AbortSignal, modelOverride?: string): Promise<string> {
   const userText = `Analyze this dashboard screenshot and return the audit JSON.${contextText ? ` Context: ${contextText}` : ''}`
+  const model = modelOverride ?? (process.env.OPENROUTER_MODEL || FALLBACK_MODEL)
   const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -29,7 +37,7 @@ async function callModel(image: string, mediaType: string, contextText: string, 
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: process.env.OPENROUTER_MODEL || 'anthropic/claude-sonnet-4-6',
+      model,
       max_tokens: 3000,
       messages: [
         {
@@ -75,8 +83,14 @@ router.post('/', async (req: Request, res: Response) => {
 
   try {
     let lastParseError: unknown
+    const primaryModel = process.env.OPENROUTER_MODEL || FALLBACK_MODEL
+    const models = primaryModel !== FALLBACK_MODEL ? [primaryModel, FALLBACK_MODEL] : [primaryModel, primaryModel]
     for (let attempt = 0; attempt < 2; attempt++) {
-      const content = await callModel(image, mediaType, contextText, controller.signal)
+      const content = await callModel(image, mediaType, contextText, controller.signal, models[attempt])
+      if (looksLikeRefusal(content)) {
+        lastParseError = new Error('model refused to return JSON')
+        continue
+      }
       try {
         const audit = buildAuditResult(parseAuditJson(content))
         clearTimeout(timeoutId)
