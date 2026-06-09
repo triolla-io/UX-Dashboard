@@ -1166,7 +1166,10 @@ body {
 
 .report-verdict {
   flex: 1;
-  text-align: center;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .report-verdict-label {
