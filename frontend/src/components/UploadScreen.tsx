@@ -82,8 +82,7 @@ export default function UploadScreen({ onSubmit }: Props) {
 
       {/* Nav */}
       <nav className="nav">
-        <img src={triollaLogo} alt="Triolla" className="nav-logo" />
-        <button className="nav-cta">Contact Us</button>
+        <a href="https://triolla.io/" target="_blank" rel="noopener noreferrer"><img src={triollaLogo} alt="Triolla" className="nav-logo" /></a>
       </nav>
 
       {/* Hero */}
@@ -94,29 +93,13 @@ export default function UploadScreen({ onSubmit }: Props) {
         </div>
 
         <h1 className="hero-title">
-          Get an Instant UX Audit<br />of Your Dashboard
+          Hi there! Get a real feedback<br /> on your dashboard design
         </h1>
 
         <p className="hero-subtitle">
           Upload a screenshot and get{' '}
-          <strong>Expert AI Analysis</strong>{' '}
-          trained on hundreds of enterprise dashboards
+          <strong>Expert AI Analysis</strong>{' '}AI trained on 250+ dashboard project we led in triolla.
         </p>
-
-        {/* Segment selector */}
-        <div className="segment-wrap">
-          <label className="segment-label">Choose your segment</label>
-          <select
-            className="segment-select"
-            value={segment}
-            onChange={e => setSegment(e.target.value)}
-          >
-            <option value="">Select industry…</option>
-            {SEGMENTS.map(s => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
-        </div>
 
         {/* Dropzone — selecting/dropping a file auto-submits */}
         <div
@@ -127,6 +110,21 @@ export default function UploadScreen({ onSubmit }: Props) {
           onClick={() => inputRef.current?.click()}
           data-testid="dropzone"
         >
+          {/* Segment selector */}
+          <div className="segment-wrap" onClick={e => e.stopPropagation()}>
+            <label className="segment-label">Choose your segment</label>
+            <select
+              className="segment-select"
+              value={segment}
+              onChange={e => setSegment(e.target.value)}
+            >
+              <option value="">Select industry…</option>
+              {SEGMENTS.map(s => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+          </div>
+
           <div className="dropzone-icon-stack">
             <img src={uploadIcon} alt="" className="dropzone-icon dropzone-icon--rest" />
             <img src={uploadIconHover} alt="" className="dropzone-icon dropzone-icon--hover" />
@@ -199,7 +197,7 @@ export default function UploadScreen({ onSubmit }: Props) {
 
       {/* Footer */}
       <footer className="footer">
-        <img src={triollaLogo} alt="Triolla" className="footer-logo" />
+        <a href="https://triolla.io/" target="_blank" rel="noopener noreferrer"><img src={triollaLogo} alt="Triolla" className="footer-logo" /></a>
       </footer>
     </div>
   )

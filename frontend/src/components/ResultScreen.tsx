@@ -128,8 +128,7 @@ export default function ResultScreen({ result, error, onReset }: Props) {
 
       {/* Nav — same as UploadScreen */}
       <nav className="nav">
-        <img src={triollaLogo} alt="Triolla" className="nav-logo" />
-        <button className="nav-cta">Contact Us</button>
+        <a href="https://triolla.io/" target="_blank" rel="noopener noreferrer"><img src={triollaLogo} alt="Triolla" className="nav-logo" /></a>
       </nav>
 
       {/* Hero — same yellow layout as upload, card replaces dropzone */}
@@ -145,8 +144,7 @@ export default function ResultScreen({ result, error, onReset }: Props) {
 
         <p className="hero-subtitle">
           Upload a screenshot and get{' '}
-          <strong>Expert AI Analysis</strong>{' '}
-          trained on hundreds of enterprise dashboards
+          <strong>Expert AI Analysis</strong>{' '}AI trained on 250+ dashboard project we led in triolla.
         </p>
 
         {/* ── Report card ── */}
