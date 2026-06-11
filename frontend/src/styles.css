@@ -1329,7 +1329,7 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  padding: 20px 20px 24px;
+  padding: 30px 20px 24px;
   background: linear-gradient(
     to bottom,
     rgba(244, 243, 251, 0) 0%,
@@ -1339,20 +1339,22 @@ body {
 }
 
 .locked-card {
-  background: var(--black);
+  background: #1A1535;
   border-radius: 24px;
-  padding: 40px 36px 36px;
+  padding: 36px 32px 32px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   width: 100%;
   max-width: 480px;
-  box-shadow: 0 12px 48px rgba(0,0,0,0.22);
+  box-shadow: 0 16px 60px rgba(26,21,53,0.28);
+  border: 1px solid rgba(124,92,252,0.18);
 }
 
 .locked-title {
-  font-size: 26px;
+  font-family: var(--font-heading);
+  font-size: 24px;
   font-weight: 700;
   color: #ffffff;
   text-align: center;
@@ -1361,20 +1363,20 @@ body {
 }
 
 .locked-tagline {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
-  color: var(--yellow);
+  color: var(--purple);
   text-align: center;
   letter-spacing: 0.1px;
   margin-top: -4px;
 }
 
 .locked-desc {
-  font-size: 14px;
-  color: rgba(255,255,255,0.45);
+  font-size: 13px;
+  color: rgba(255,255,255,0.42);
   text-align: center;
-  line-height: 1.6;
-  max-width: 320px;
+  line-height: 1.65;
+  max-width: 300px;
   margin-top: 2px;
 }
 
@@ -1384,19 +1386,23 @@ body {
   color: var(--black);
   border: none;
   border-radius: 100px;
-  padding: 18px 0;
+  padding: 17px 0;
   font-family: var(--font-body);
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
   cursor: pointer;
-  margin-top: 12px;
+  margin-top: 10px;
   width: 100%;
   text-align: center;
   text-decoration: none;
-  transition: background 0.15s;
+  letter-spacing: -0.1px;
+  transition: background 0.15s, transform 0.1s;
 }
 
-.locked-cta:hover { background: var(--yellow-hover); }
+.locked-cta:hover {
+  background: var(--yellow-hover);
+  transform: translateY(-1px);
+}
 
 /* Error state */
 .report-error {
