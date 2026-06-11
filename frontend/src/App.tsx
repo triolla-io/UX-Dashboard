@@ -54,8 +54,11 @@ export default function App() {
         try {
           data = JSON.parse(raw)
         } catch {
+          console.error('Non-JSON response from server:', res.status, raw.slice(0, 300))
           throw new Error(
-            'The analysis service returned an unexpected response. Please make sure the server is running and try again.'
+            res.status === 504
+              ? 'The analysis took too long. Please try again.'
+              : `Analysis failed (${res.status}). Please try again.`
           )
         }
       }

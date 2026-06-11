@@ -57,8 +57,11 @@ async function callModel(image: string, mediaType: string, contextText: string, 
   })
 
   if (!response.ok) {
-    const errData = (await response.json().catch(() => ({}))) as { error?: { message?: string } }
-    throw new OpenRouterError(errData.error?.message || 'OpenRouter error')
+    const errText = await response.text().catch(() => '')
+    console.error(`OpenRouter ${response.status}:`, errText.slice(0, 300))
+    let errMsg = 'OpenRouter error'
+    try { errMsg = (JSON.parse(errText) as any).error?.message || errMsg } catch {}
+    throw new OpenRouterError(errMsg)
   }
 
   const data = (await response.json()) as any

@@ -1,4 +1,4 @@
-import express from 'express'
+import express, { NextFunction, Request, Response } from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import path from 'path'
@@ -13,6 +13,12 @@ app.use(cors())
 app.use(express.json({ limit: '20mb' }))
 
 app.use('/api/feedback', feedbackRouter)
+
+// Catch-all JSON error handler — prevents Express from leaking HTML error pages
+app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+  console.error('Unhandled error:', err.message)
+  res.status(500).json({ error: 'Something went wrong. Please try again later.' })
+})
 
 // Serve frontend in production
 const distPath = path.resolve(__dirname, '../../frontend/dist')
