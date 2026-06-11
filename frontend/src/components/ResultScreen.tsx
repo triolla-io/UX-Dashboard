@@ -138,15 +138,6 @@ export default function ResultScreen({ result, error, onReset }: Props) {
           <img src={welcomeImg} alt="Welcome!" className="hero-welcome-img" />
         </div>
 
-        <h1 className="hero-title">
-          Get an Instant UX Audit<br />of Your Dashboard
-        </h1>
-
-        <p className="hero-subtitle">
-          Upload a screenshot and get{' '}
-          <strong>Expert AI Analysis</strong>{' '}AI trained on 250+ dashboard project we led in triolla.
-        </p>
-
         {/* ── Report card ── */}
         <div className="report-card">
           <div className="report-card-header">Triolla AI Audit Report</div>
@@ -203,17 +194,21 @@ export default function ResultScreen({ result, error, onReset }: Props) {
                       ))}
                     </ul>
                     <div className="insights-locked-overlay">
-                      <div className="lock-icon-wrap">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                        </svg>
+                      <div className="locked-card">
+                        <div className="locked-title">Book a Free 30-Minute UX Audit</div>
+                        <div className="locked-tagline">Human Expertise. AI-Powered Analysis.</div>
+                        <div className="locked-desc">
+                          Identify critical gaps before they become costly mistakes
+                        </div>
+                        <a
+                          className="locked-cta"
+                          href="https://calendly.com/triolla/pitangoux-introductory-meeting-clone?month=2026-06"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          Schedule My Expert Review ASAP
+                        </a>
                       </div>
-                      <div className="locked-title">{lockedItems.length}+ insights are locked</div>
-                      <div className="locked-desc">
-                        Contact Triolla to unlock the complete professional review with a free expert consultation
-                      </div>
-                      <button className="locked-cta">Contact Us</button>
                     </div>
                   </div>
                 )}

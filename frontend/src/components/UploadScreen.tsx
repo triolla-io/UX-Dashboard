@@ -100,7 +100,7 @@ export default function UploadScreen({ onSubmit }: Props) {
           Upload a screenshot and get{' '}
           <strong>Expert AI Analysis</strong>{' '}AI trained on 250+ dashboard project we led in triolla.
         </p>
-
+  
         {/* Dropzone — selecting/dropping a file auto-submits */}
         <div
           className={`dropzone-card${dragOver ? ' drag-over' : ''}`}
