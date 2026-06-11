@@ -26,7 +26,7 @@ export default function LoadingScreen() {
         </div>
 
         <h1 className="hero-title">
-          Hi there!<br />Get a real feedback on your dashboard design
+          Hi there! Get a real feedback<br /> on your dashboard design
         </h1>
 
         <p className="hero-subtitle">
