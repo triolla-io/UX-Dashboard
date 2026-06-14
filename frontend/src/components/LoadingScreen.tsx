@@ -25,13 +25,16 @@ export default function LoadingScreen() {
           <img src={welcomeImg} alt="Welcome!" className="hero-welcome-img" />
         </div>
 
+        <p className="hero-subtitle">
+          Hi there!
+        </p>
+
         <h1 className="hero-title">
-          Hi there! Get a real feedback<br /> on your dashboard design
+          Get a real feedback<br /> on your dashboard design
         </h1>
 
-        <p className="hero-subtitle">
-          Upload a screenshot and get{' '}
-          <strong>Expert AI Analysis</strong>{' '}AI trained on 250+ dashboard project we led in triolla.
+        <p className="hero-subtitle mb-3">
+          Upload a screenshot and get <strong>Expert AI Analysis</strong> trained on 250+ dashboard projects we led in Triolla.
         </p>
 
         <LoadingCard />

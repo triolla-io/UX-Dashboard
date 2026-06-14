@@ -116,7 +116,7 @@ body {
 /* ─── HERO ────────────────────────────────────────── */
 .hero {
   background: var(--yellow);
-  padding: 0px 24px 64px;
+  padding: 0px 24px 40px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -135,6 +135,14 @@ body {
   z-index: 2;
   animation: float 3s ease-in-out infinite;
   pointer-events: none;
+}
+
+/* Only show the avatar when the yellow gutter is wide enough that it
+   sits beside (not on top of) the report card. */
+@media (max-width: 1400px) {
+  .hero-avatar-group {
+    display: none;
+  }
 }
 
 @keyframes float {
@@ -167,13 +175,27 @@ body {
   letter-spacing: -1.5px;
 }
 
+.hero-title-greeting {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  display: block;
+  margin-bottom: 4px;
+}
+
 .hero-subtitle {
   font-size: clamp(16px, 1.46vw, 28px);
   font-weight: 400;
   color: #494949;
   max-width: none;
-  margin-bottom: 40px;
+  margin-bottom: 12px;
   line-height: 1.35;
+}
+
+.hero-subtitle--note {
+  margin-top: 10px;
+  margin-bottom: 28px;
+  color: #6b6b6b;
 }
 
 .hero-subtitle strong {
@@ -184,49 +206,6 @@ body {
   font-weight: 600;
 }
 
-/* ─── SEGMENT SELECTOR ────────────────────────────── */
-.segment-wrap {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 8px;
-  position: absolute;
-  top: 20px;
-  left: 24px;
-}
-
-.segment-label {
-  font-size: 12px;
-  font-weight: 500;
-  color: rgba(0,0,0,0.45);
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-}
-
-.segment-select {
-  padding: 7px 32px 7px 14px;
-  border-radius: 100px;
-  border: 1.5px solid rgba(0,0,0,0.15);
-  background: rgba(255,255,255,0.8) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23555' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 12px center;
-  -webkit-appearance: none;
-  appearance: none;
-  font-family: var(--font-body);
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--black);
-  cursor: pointer;
-  outline: none;
-  transition: border-color 0.15s;
-}
-
-.segment-select:focus {
-  border-color: var(--purple);
-}
-
-.segment-select option[value=""] {
-  color: #999;
-}
 
 /* ─── DROPZONE CARD ───────────────────────────────── */
 .dropzone-card {
@@ -237,6 +216,7 @@ body {
   width: 100%;
   max-width: 820px;
   min-height: 260px;
+  margin-top: 24px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -439,7 +419,7 @@ body {
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 400;
   color: var(--black);
 }
@@ -462,7 +442,7 @@ body {
 /* ─── WHY TRIOLLA ─────────────────────────────────── */
 .why-section {
   background: var(--black);
-  padding: 80px 0 48px;
+  padding: 48px 0 48px;
   text-align: center;
 }
 
@@ -936,6 +916,153 @@ body {
   transform: translateY(-1px);
 }
 
+/* ─── SEGMENT MODAL ──────────────────────────────── */
+.seg-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 900;
+  padding: 24px;
+  animation: fadeOverlay 0.2s ease both;
+}
+
+@keyframes fadeOverlay {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.seg-modal {
+  background: #fff;
+  border-radius: 28px;
+  padding: 40px 36px 32px;
+  width: 100%;
+  max-width: 560px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.22);
+  animation: fadeUp 0.25s ease both;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.seg-modal-eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--purple);
+  margin-bottom: 10px;
+}
+
+.seg-modal-title {
+  font-family: var(--font-heading);
+  font-size: clamp(20px, 3vw, 26px);
+  font-weight: 700;
+  color: #1a1a2e;
+  letter-spacing: -0.5px;
+  line-height: 1.25;
+  margin-bottom: 28px;
+}
+
+.seg-modal-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 32px;
+}
+
+.seg-pill {
+  padding: 9px 18px;
+  border-radius: 100px;
+  border: 1.5px solid rgba(0, 0, 0, 0.14);
+  background: #f5f5f7;
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s, transform 0.1s;
+}
+
+.seg-pill:hover {
+  border-color: var(--purple);
+  color: var(--purple);
+  background: var(--purple-soft);
+  transform: translateY(-1px);
+}
+
+.seg-pill--active {
+  border-color: var(--purple);
+  background: var(--purple);
+  color: #fff;
+}
+
+.seg-pill--active:hover {
+  background: #6b4ee0;
+  border-color: #6b4ee0;
+  color: #fff;
+}
+
+.seg-modal-actions {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+
+.seg-btn-skip {
+  flex: 1;
+  padding: 14px 0;
+  border-radius: 100px;
+  border: 1.5px solid rgba(0, 0, 0, 0.16);
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  color: #555;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.seg-btn-skip:hover {
+  border-color: rgba(0, 0, 0, 0.35);
+  color: #111;
+}
+
+.seg-btn-continue {
+  flex: 2;
+  padding: 14px 0;
+  border-radius: 100px;
+  border: none;
+  background: var(--black);
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.seg-btn-continue:hover {
+  background: #222;
+  transform: translateY(-1px);
+}
+
+@media (max-width: 480px) {
+  .seg-modal {
+    padding: 32px 20px 24px;
+    border-radius: 20px;
+  }
+  .seg-modal-actions {
+    flex-direction: column-reverse;
+  }
+}
+
 .footer {
   background: #0B0B0B;
   border-top: 1px solid #1c1c1c;
@@ -1209,93 +1336,95 @@ body {
   margin-bottom: 20px;
 }
 
-/* Overview: gauge + verdict — nested white card on the lavender surface */
+/* Unified overview: gauge third (left) + 2×2 category grid (right) */
 .report-overview {
   display: flex;
-  align-items: center;
-  gap: 28px;
-  padding: 28px 36px;
+  align-items: stretch;
+  gap: 40px;
+  padding: 32px 36px;
   background: #fff;
   border-radius: 18px;
 }
 
-.report-gauge-wrap {
-  flex-shrink: 0;
+/* Left third: gauge with label + verdict stacked beneath it */
+.report-gauge-col {
+  flex: 0 0 33%;
   display: flex;
   flex-direction: column;
   align-items: center;
-}
-
-.report-verdict {
-  flex: 1;
-  text-align: left;
-  display: flex;
-  flex-direction: column;
   justify-content: center;
+  text-align: center;
+  gap: 8px;
 }
 
 .report-verdict-label {
   font-size: 13px;
   color: #6b7280;
-  margin-bottom: 8px;
   letter-spacing: 0.01em;
 }
 
 .report-verdict-title {
   font-family: var(--font-heading);
-  font-size: clamp(18px, 2vw, 28px);
+  font-size: 18px;
   font-weight: 700;
   color: #1a1a2e;
-  line-height: 1.15;
-  letter-spacing: -0.5px;
+  line-height: 1.18;
+  letter-spacing: -0.3px;
 }
 
-/* Category score cards */
+/* Right two-thirds: flat 2×2 grid of category cells */
 .score-cards {
+  flex: 1;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  padding: 20px 0 8px;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: 10px 14px;
+  padding: 0 0 0 56px;
 }
 
 .score-card {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 18px 20px;
-  background: #fff;
-  border: 1px solid #ecebf6;
-  border-radius: 16px;
-  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+  gap: 11px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .score-card-icon {
   flex-shrink: 0;
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   background: #EEEDFB;
   color: #5b5570;
-  border-radius: 12px;
+  border-radius: 11px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
+.score-card-icon svg {
+  width: 21px;
+  height: 21px;
+}
+
 .score-card-body {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
   min-width: 0;
 }
 
 .score-card-label {
-  font-size: 12px;
+  font-size: 13px;
   color: #6b7280;
   font-weight: 400;
 }
 
 .score-card-value {
-  font-size: 22px;
+  font-size: 21px;
   font-weight: 800;
   color: #1a1a2e;
   line-height: 1;
@@ -1313,8 +1442,8 @@ body {
 @media (max-width: 640px) {
   .score-cards {
     grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-    padding: 16px 18px;
+    gap: 18px 20px;
+    padding: 0;
   }
 }
 
@@ -1478,7 +1607,7 @@ body {
 .locked-cta {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 8px;
   background: #E91E8C;
   color: #ffffff;
@@ -1490,7 +1619,9 @@ body {
   font-weight: 700;
   cursor: pointer;
   margin-top: 10px;
-  width: 100%;
+  width: calc(100% - 48px);
+  margin-left: auto;
+  margin-right: auto;
   text-decoration: none;
   letter-spacing: -0.1px;
   transition: background 0.15s, transform 0.1s;
@@ -1575,12 +1706,18 @@ body {
   .report-overview {
     flex-direction: column;
     align-items: center;
-    gap: 16px;
-    padding: 20px;
+    gap: 24px;
+    padding: 24px 20px;
     text-align: center;
   }
 
+  .report-gauge-col {
+    flex: none;
+    width: 100%;
+  }
+
   .score-cards {
+    width: 100%;
     grid-template-columns: repeat(2, 1fr);
   }
 }
@@ -1632,16 +1769,7 @@ body {
     font-size: 14px;
   }
 
-  .segment-wrap {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .segment-select {
-    width: 100%;
-  }
-
-  .trust-row {
+.trust-row {
     font-size: 13px;
   }
 
@@ -1671,12 +1799,12 @@ body {
 
   .score-cards {
     grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    padding: 14px 0;
+    gap: 16px 14px;
+    padding: 0;
   }
 
   .score-card {
-    padding: 14px 12px;
+    padding: 0;
     gap: 10px;
   }
 

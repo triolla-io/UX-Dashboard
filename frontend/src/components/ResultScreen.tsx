@@ -5,6 +5,8 @@ import avatarImg from '../assests/avatar.png'
 import welcomeImg from '../assests/welcome.png'
 import starIcon from '../assests/star.svg'
 
+const CALENDLY_URL = 'https://calendar.google.com/calendar/appointments/schedules/AcZssZ0uHSTPJ7s4d1EFxBgR1FK_dmpP9BP3DwkKbIggAvjjuFzVnFOpHjWfkzRvZB4BfZsGv4m-Fy1_?gv=true'
+
 interface Props {
   result: AuditResult | null
   error: string | null
@@ -29,7 +31,7 @@ const PLACEHOLDER_INSIGHTS = [
 ]
 
 const ICON_PROPS = {
-  width: 20, height: 20, viewBox: '0 0 24 24', fill: 'none',
+  width: 24, height: 24, viewBox: '0 0 24 24', fill: 'none',
   stroke: 'currentColor', strokeWidth: 2,
   strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const,
 }
@@ -77,24 +79,50 @@ const CATEGORY_META: { key: InsightCategory; label: string; icon: JSX.Element }[
   },
 ]
 
+const GAUGE_FONT = "-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif"
+
+function scoreColor(score: number): string {
+  return score < 40 ? '#E5484D' : score < 65 ? '#E8590C' : '#2BA24C'
+}
+
 interface GaugeProps { score: number }
 function ScoreGauge({ score }: GaugeProps) {
-  const r = 40
-  const arcLen = Math.PI * r
-  const filled = (score / 100) * arcLen
-  const color = score < 40 ? '#C62828' : score < 65 ? '#E65100' : '#2E7D32'
+  const cx = 150, cy = 148, r = 104
+  const clamped = Math.max(0, Math.min(100, score))
+  const theta = Math.PI * (1 - clamped / 100)
+  const mx = cx + r * Math.cos(theta)
+  const my = cy - r * Math.sin(theta)
+
+  const fullArc = `M ${cx - r} ${cy} A ${r} ${r} 0 0 1 ${cx + r} ${cy}`
+
   return (
-    <svg viewBox="0 0 110 62" width="140" height="78">
-      <path d="M 15 56 A 40 40 0 0 1 95 56"
-        fill="none" stroke="#EBEBEB" strokeWidth="9" strokeLinecap="round" />
-      <path d="M 15 56 A 40 40 0 0 1 95 56"
-        fill="none" stroke={color} strokeWidth="9" strokeLinecap="round"
-        strokeDasharray={`${filled} ${arcLen}`} />
-      <text x="55" y="50" textAnchor="middle"
-        fill={color} fontSize="20" fontWeight="800"
-        fontFamily="-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif">
-        {score}
-      </text>
+    <svg viewBox="0 0 300 190" width="100%" style={{ maxWidth: 320, display: 'block', margin: '0 auto' }}
+      role="img" aria-label={`Score ${score} out of 100`}>
+      <defs>
+        <linearGradient id="gaugeGrad" gradientUnits="userSpaceOnUse" x1={cx - r} y1="0" x2={cx + r} y2="0">
+          <stop offset="0%"   stopColor="#EF4444" />
+          <stop offset="35%"  stopColor="#F97316" />
+          <stop offset="55%"  stopColor="#FACC15" />
+          <stop offset="75%"  stopColor="#84CC16" />
+          <stop offset="100%" stopColor="#22C55E" />
+        </linearGradient>
+        <filter id="indShadow" x="-150%" y="-150%" width="400%" height="400%">
+          <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor="#000" floodOpacity="0.18" />
+        </filter>
+      </defs>
+
+      <path d={fullArc} fill="none" stroke="url(#gaugeGrad)" strokeWidth="28" strokeLinecap="butt" />
+
+      <circle cx={mx} cy={my} r="15" fill="white" filter="url(#indShadow)" />
+      <circle cx={mx} cy={my} r="9" fill={scoreColor(score)} />
+
+      <text x={cx - r + 4} y={cy + 30} textAnchor="middle" fontSize="13" fontWeight="500"
+        fill="#adb5bd" fontFamily={GAUGE_FONT}>0</text>
+      <text x={cx + r - 4} y={cy + 30} textAnchor="middle" fontSize="13" fontWeight="500"
+        fill="#adb5bd" fontFamily={GAUGE_FONT}>100</text>
+
+      <text x={cx} y={cy - 22} textAnchor="middle" fontSize="52" fontWeight="800"
+        fill="#16182b" fontFamily={GAUGE_FONT} letterSpacing="-1">{score}</text>
     </svg>
   )
 }
@@ -115,6 +143,10 @@ function serializeReport(result: AuditResult): string {
 }
 
 export default function ResultScreen({ result, error, onReset }: Props) {
+  const openScheduler = () => {
+    window.open(CALENDLY_URL, '_blank', 'noopener,noreferrer')
+  }
+
   const ranked = result ? [...result.insights].sort((a, b) => a.priority - b.priority) : []
   const visible = ranked.slice(0, VISIBLE)
   const realLocked = ranked.slice(VISIBLE)
@@ -162,30 +194,27 @@ export default function ResultScreen({ result, error, onReset }: Props) {
             <div className="report-error" role="alert">{error || 'No result available.'}</div>
           ) : (
             <>
-              {/* Overall score row */}
+              {/* Unified overview box: gauge third + 2×2 category grid */}
               <div className="report-overview">
-                <div className="report-gauge-wrap">
-                  <ScoreGauge score={result.overall} />
-                </div>
-                <div className="report-verdict">
+                <div className="report-gauge-col">
                   <div className="report-verdict-label">Overall Dashboard Score</div>
+                  <ScoreGauge score={result.overall} />
                   <div className="report-verdict-title">{result.verdict}</div>
                 </div>
-              </div>
 
-              {/* Category score cards */}
-              <div className="score-cards">
-                {CATEGORY_META.map(({ key, label, icon }) => (
-                  <div className="score-card" key={key}>
-                    <div className="score-card-icon">{icon}</div>
-                    <div className="score-card-body">
-                      <div className="score-card-label">{label}</div>
-                      <div className="score-card-value">
-                        {result.categories[key].score}<span>/100</span>
+                <div className="score-cards">
+                  {CATEGORY_META.map(({ key, label, icon }) => (
+                    <div className="score-card" key={key}>
+                      <div className="score-card-icon">{icon}</div>
+                      <div className="score-card-body">
+                        <div className="score-card-label">{label}</div>
+                        <div className="score-card-value">
+                          {result.categories[key].score}<span>/100</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
 
               {/* Insights */}
@@ -221,15 +250,7 @@ export default function ResultScreen({ result, error, onReset }: Props) {
                       <button
                         type="button"
                         className="locked-cta"
-                        onClick={(e) => {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          const cal = (window as any).Calendly
-                          if (!cal) return
-                          // remove any stale popup before opening a new one
-                          document.querySelectorAll('.calendly-overlay').forEach(el => el.remove())
-                          cal.initPopupWidget({ url: 'https://calendly.com/triolla/pitangoux-introductory-meeting-clone' })
-                        }}
+                        onClick={openScheduler}
                       >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                           <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
@@ -238,10 +259,6 @@ export default function ResultScreen({ result, error, onReset }: Props) {
                           <line x1="3" y1="10" x2="21" y2="10" />
                         </svg>
                         Schedule My Expert Review ASAP
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                          <line x1="5" y1="12" x2="19" y2="12" />
-                          <polyline points="12 5 19 12 12 19" />
-                        </svg>
                       </button>
                     </div>
                   </div>

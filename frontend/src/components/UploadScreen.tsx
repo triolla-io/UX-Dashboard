@@ -43,13 +43,11 @@ const SEGMENTS = [
 export default function UploadScreen({ onSubmit }: Props) {
   const [error, setError] = useState<string | null>(null)
   const [dragOver, setDragOver] = useState(false)
-  const [segment, setSegment] = useState('')
+  const [pendingFile, setPendingFile] = useState<File | null>(null)
+  const [selectedSegment, setSelectedSegment] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const submitFile = (f: File) => {
-    const err = validateFile(f)
-    if (err) { setError(err); return }
-    setError(null)
+  const readAndSubmit = (f: File, segment: string) => {
     const reader = new FileReader()
     reader.onload = () => {
       const dataUrl = reader.result as string
@@ -58,6 +56,14 @@ export default function UploadScreen({ onSubmit }: Props) {
       onSubmit(base64, f.type, context)
     }
     reader.readAsDataURL(f)
+  }
+
+  const submitFile = (f: File) => {
+    const err = validateFile(f)
+    if (err) { setError(err); return }
+    setError(null)
+    setSelectedSegment('')
+    setPendingFile(f)
   }
 
   const handleDrop = (e: DragEvent<HTMLDivElement>) => {
@@ -72,8 +78,45 @@ export default function UploadScreen({ onSubmit }: Props) {
     if (f) submitFile(f)
   }
 
+  const handleModalSkip = () => {
+    if (!pendingFile) return
+    readAndSubmit(pendingFile, '')
+    setPendingFile(null)
+  }
+
+  const handleModalContinue = () => {
+    if (!pendingFile) return
+    readAndSubmit(pendingFile, selectedSegment)
+    setPendingFile(null)
+  }
+
   return (
     <div>
+      {/* Segment modal — shown after file is selected */}
+      {pendingFile && (
+        <div className="seg-modal-overlay" onClick={handleModalSkip}>
+          <div className="seg-modal" onClick={e => e.stopPropagation()}>
+            <p className="seg-modal-eyebrow">Optional</p>
+            <h2 className="seg-modal-title">For more accurate results,<br />choose your segment</h2>
+            <div className="seg-modal-pills">
+              {SEGMENTS.map(s => (
+                <button
+                  key={s}
+                  className={`seg-pill${selectedSegment === s ? ' seg-pill--active' : ''}`}
+                  onClick={() => setSelectedSegment(prev => prev === s ? '' : s)}
+                  type="button"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+            <div className="seg-modal-actions">
+              <button className="seg-btn-continue" onClick={handleModalContinue} type="button">Continue</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Top Banner */}
       <div className="top-banner">
         <img src={sparkIcon} alt="" className="banner-spark" />
@@ -92,16 +135,19 @@ export default function UploadScreen({ onSubmit }: Props) {
           <img src={welcomeImg} alt="Welcome!" className="hero-welcome-img" />
         </div>
 
+        <p className="hero-subtitle">
+          Hi there!
+        </p>
+
         <h1 className="hero-title">
-          Hi there! Get a real feedback<br /> on your dashboard design
+          Get a real feedback<br /> on your dashboard design
         </h1>
 
         <p className="hero-subtitle">
-          Upload a screenshot and get{' '}
-          <strong>Expert AI Analysis</strong>{' '}AI trained on 250+ dashboard project we led in triolla.
+          Upload a screenshot and get <strong>Expert AI Analysis</strong> trained on 250+ dashboard projects we led in Triolla.
         </p>
-  
-        {/* Dropzone — selecting/dropping a file auto-submits */}
+
+        {/* Dropzone — selecting/dropping a file opens the segment modal */}
         <div
           className={`dropzone-card${dragOver ? ' drag-over' : ''}`}
           onDrop={handleDrop}
@@ -110,21 +156,6 @@ export default function UploadScreen({ onSubmit }: Props) {
           onClick={() => inputRef.current?.click()}
           data-testid="dropzone"
         >
-          {/* Segment selector */}
-          <div className="segment-wrap" onClick={e => e.stopPropagation()}>
-            <label className="segment-label">Choose your segment</label>
-            <select
-              className="segment-select"
-              value={segment}
-              onChange={e => setSegment(e.target.value)}
-            >
-              <option value="">Select industry…</option>
-              {SEGMENTS.map(s => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
-          </div>
-
           <div className="dropzone-icon-stack">
             <img src={uploadIcon} alt="" className="dropzone-icon dropzone-icon--rest" />
             <img src={uploadIconHover} alt="" className="dropzone-icon dropzone-icon--hover" />
