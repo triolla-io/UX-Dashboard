@@ -170,7 +170,7 @@ body {
 }
 
 .hero-welcome-img {
-  width: 140px;
+  width: clamp(80px, 12vw, 140px);
   height: auto;
   display: block;
   margin-top: -2px;
@@ -1596,7 +1596,7 @@ body {
 }
 
 .locked-avatar-img {
-  width: 170px;
+  width: clamp(100px, 14vw, 170px);
   height: auto;
   display: block;
 }
@@ -1699,7 +1699,8 @@ body {
   }
 
   /* decorative float — hides to avoid overlapping centered text */
-  .hero-avatar-group {
+  .hero-avatar-group,
+  .locked-avatar-group {
     display: none;
   }
 
