@@ -1,8 +1,7 @@
 import { useState, useRef, DragEvent, ChangeEvent } from 'react'
 import uploadIcon from '../assests/upload.svg'
 import uploadIconHover from '../assests/upload_hover.svg'
-import avatarImg from '../assests/avatar.png'
-import welcomeImg from '../assests/welcome.png'
+const welcomeImg = '/welcomehomepage.svg'
 import starIcon from '../assests/star.svg'
 import triollaLogo from '../assests/triolla.svg'
 import sparkIcon from '../assests/spark.svg'
@@ -131,7 +130,6 @@ export default function UploadScreen({ onSubmit }: Props) {
       {/* Hero */}
       <section className="hero">
         <div className="hero-avatar-group">
-          <img src={avatarImg} alt="" className="hero-avatar-img" />
           <img src={welcomeImg} alt="Welcome!" className="hero-welcome-img" />
         </div>
 

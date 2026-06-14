@@ -170,7 +170,7 @@ body {
 }
 
 .hero-welcome-img {
-  width: 80px;
+  width: 140px;
   height: auto;
   display: block;
   margin-top: -2px;
@@ -201,7 +201,7 @@ body {
   font-weight: 400;
   color: #494949;
   max-width: none;
-  margin-bottom: 12px;
+  margin-bottom: 36px;
   line-height: 1.35;
 }
 
@@ -1474,29 +1474,29 @@ body {
   font-weight: 700;
   color: #1a1a2e;
   letter-spacing: -0.3px;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 .insights-list {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 28px;
 }
 
 .insight-item {
   display: flex;
   align-items: flex-start;
-  gap: 14px;
-  font-size: 14px;
+  gap: 16px;
+  font-size: 18px;
   color: #1f2937;
-  line-height: 1.5;
+  line-height: 1.6;
   padding-left: 16px;
 }
 
 .insight-sparkle {
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 26px;
   flex-shrink: 0;
   margin-top: 1px;
   display: block;
@@ -1596,7 +1596,7 @@ body {
 }
 
 .locked-avatar-img {
-  width: 72px;
+  width: 170px;
   height: auto;
   display: block;
 }

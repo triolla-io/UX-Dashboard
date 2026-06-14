@@ -2,7 +2,7 @@ import type { AuditResult, InsightCategory } from '../types'
 import triollaLogo from '../assests/triolla.svg'
 import sparkIcon from '../assests/spark.svg'
 import avatarImg from '../assests/avatar.png'
-import welcomeImg from '../assests/welcome.png'
+const welcomeImg = '/welcomelastpage.svg'
 import starIcon from '../assests/star.svg'
 
 const CALENDLY_URL = 'https://calendar.google.com/calendar/appointments/schedules/AcZssZ0uHSTPJ7s4d1EFxBgR1FK_dmpP9BP3DwkKbIggAvjjuFzVnFOpHjWfkzRvZB4BfZsGv4m-Fy1_?gv=true'
@@ -265,8 +265,8 @@ export default function ResultScreen({ result, error, onReset }: Props) {
                       There is a ton of <em>deeper insight</em> into this
                     </p>
                     <div className="locked-avatar-group">
-                      <img src={avatarImg} alt="" className="locked-avatar-img" />
-                      <img src={welcomeImg} alt="Welcome!" className="locked-welcome-img" />
+                      {/* <img src={avatarImg} alt="" className="locked-avatar-img" /> */}
+                      <img src={welcomeImg} alt="" className="locked-avatar-img" />
                     </div>
                     <div className="locked-card">
                       <div className="locked-title">Book a Free 30-Minute UX Audit</div>

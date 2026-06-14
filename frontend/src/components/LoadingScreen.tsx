@@ -1,9 +1,6 @@
 import LoadingCard from './LoadingCard'
 import triollaLogo from '../assests/triolla.svg'
 import sparkIcon from '../assests/spark.svg'
-import avatarImg from '../assests/avatar.png'
-import welcomeImg from '../assests/welcome.png'
-
 export default function LoadingScreen() {
   return (
     <div>
@@ -20,11 +17,6 @@ export default function LoadingScreen() {
 
       {/* Hero */}
       <section className="hero">
-        <div className="hero-avatar-group">
-          <img src={avatarImg} alt="" className="hero-avatar-img" />
-          <img src={welcomeImg} alt="Welcome!" className="hero-welcome-img" />
-        </div>
-
         <p className="hero-subtitle">
           Hi there!
         </p>
