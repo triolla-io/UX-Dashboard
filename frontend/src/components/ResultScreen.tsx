@@ -81,8 +81,27 @@ const CATEGORY_META: { key: InsightCategory; label: string; icon: JSX.Element }[
 
 const GAUGE_FONT = "-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif"
 
-function scoreColor(score: number): string {
-  return score < 40 ? '#E5484D' : score < 65 ? '#E8590C' : '#2BA24C'
+function gaugeColorAtScore(score: number): string {
+  const clamped = Math.max(0, Math.min(100, score))
+  const theta = Math.PI * (1 - clamped / 100)
+  const pct = (Math.cos(theta) + 1) / 2
+
+  const stops = [
+    { p: 0.00, r: 0xEF, g: 0x44, b: 0x44 },
+    { p: 0.35, r: 0xF9, g: 0x73, b: 0x16 },
+    { p: 0.55, r: 0xFA, g: 0xCC, b: 0x15 },
+    { p: 0.75, r: 0x84, g: 0xCC, b: 0x16 },
+    { p: 1.00, r: 0x22, g: 0xC5, b: 0x5E },
+  ]
+
+  let lo = stops[0], hi = stops[stops.length - 1]
+  for (let i = 0; i < stops.length - 1; i++) {
+    if (pct >= stops[i].p && pct <= stops[i + 1].p) {
+      lo = stops[i]; hi = stops[i + 1]; break
+    }
+  }
+  const t = lo.p === hi.p ? 0 : (pct - lo.p) / (hi.p - lo.p)
+  return `rgb(${Math.round(lo.r + t * (hi.r - lo.r))},${Math.round(lo.g + t * (hi.g - lo.g))},${Math.round(lo.b + t * (hi.b - lo.b))})`
 }
 
 interface GaugeProps { score: number }
@@ -114,14 +133,14 @@ function ScoreGauge({ score }: GaugeProps) {
       <path d={fullArc} fill="none" stroke="url(#gaugeGrad)" strokeWidth="28" strokeLinecap="butt" />
 
       <circle cx={mx} cy={my} r="15" fill="white" filter="url(#indShadow)" />
-      <circle cx={mx} cy={my} r="9" fill={scoreColor(score)} />
+      <circle cx={mx} cy={my} r="9" fill={gaugeColorAtScore(score)} />
 
       <text x={cx - r + 4} y={cy + 30} textAnchor="middle" fontSize="13" fontWeight="500"
         fill="#adb5bd" fontFamily={GAUGE_FONT}>0</text>
       <text x={cx + r - 4} y={cy + 30} textAnchor="middle" fontSize="13" fontWeight="500"
         fill="#adb5bd" fontFamily={GAUGE_FONT}>100</text>
 
-      <text x={cx} y={cy - 22} textAnchor="middle" fontSize="52" fontWeight="800"
+      <text x={cx} y={cy - 22} textAnchor="middle" fontSize="38" fontWeight="800"
         fill="#16182b" fontFamily={GAUGE_FONT} letterSpacing="-1">{score}</text>
     </svg>
   )
