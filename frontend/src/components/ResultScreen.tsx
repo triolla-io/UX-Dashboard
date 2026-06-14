@@ -79,7 +79,7 @@ const CATEGORY_META: { key: InsightCategory; label: string; icon: JSX.Element }[
   },
 ]
 
-const GAUGE_FONT = "-apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif"
+const GAUGE_FONT = "'SF Pro Text', -apple-system, BlinkMacSystemFont, sans-serif"
 
 function gaugeColorAtScore(score: number): string {
   const clamped = Math.max(0, Math.min(100, score))
@@ -200,10 +200,6 @@ export default function ResultScreen({ result, error, onReset }: Props) {
 
       {/* Hero — same yellow layout as upload, card replaces dropzone */}
       <section className="hero">
-        <div className="hero-avatar-group">
-          <img src={avatarImg} alt="" className="hero-avatar-img" />
-          <img src={welcomeImg} alt="Welcome!" className="hero-welcome-img" />
-        </div>
 
         {/* ── Report card ── */}
         <div className="report-card">
@@ -255,11 +251,23 @@ export default function ResultScreen({ result, error, onReset }: Props) {
                         <img src={starIcon} alt="" className="insight-sparkle" />{text}
                       </li>
                     ))}
+                    <div className="blurred-icon-overlay" aria-hidden="true">
+                      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                        <line x1="16" y1="2" x2="16" y2="6" />
+                        <line x1="8" y1="2" x2="8" y2="6" />
+                        <line x1="3" y1="10" x2="21" y2="10" />
+                      </svg>
+                    </div>
                   </ul>
                   <div className="insights-locked-overlay">
                     <p className="locked-teaser">
                       There is a ton of <em>deeper insight</em> into this
                     </p>
+                    <div className="locked-avatar-group">
+                      <img src={avatarImg} alt="" className="locked-avatar-img" />
+                      <img src={welcomeImg} alt="Welcome!" className="locked-welcome-img" />
+                    </div>
                     <div className="locked-card">
                       <div className="locked-title">Book a Free 30-Minute UX Audit</div>
                       <div className="locked-tagline">Human Expertise. AI-Powered Analysis.</div>

@@ -1,3 +1,14 @@
+/* ─── SF PRO ──────────────────────────────────────── */
+@font-face {
+  font-family: 'SF Pro';
+  src: url('./assests/SFPro-Regular.woff2') format('woff2'),
+       url('./assests/SFPro-Regular.woff') format('woff'),
+       url('./assests/SFPro-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* ─── SYNE (self-hosted) ──────────────────────────── */
 @font-face {
   font-family: 'Syne';
@@ -43,8 +54,8 @@
   --gray-light: #F5F5F5;
   --gray-mid: #999;
   --gray-dark: #555;
-  --font-heading: 'SF Pro Display', 'SF Pro Text', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
-  --font-body: 'SF Pro Text', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+  --font-heading: 'SF Pro', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+  --font-body: 'SF Pro', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
 }
 
 html {
@@ -124,11 +135,12 @@ body {
   position: relative;
 }
 
-/* ─── HERO AVATAR GROUP (absolutely overlaid, top-left) ─────── */
+/* ─── HERO AVATAR GROUP (absolutely overlaid, right-middle) ─────── */
 .hero-avatar-group {
   position: absolute;
-  left: 80px;
-  top: 28px;
+  right: 180px;
+  top: 68%;
+  transform: translateY(-50%);
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -146,22 +158,23 @@ body {
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50%       { transform: translateY(-6px); }
+  0%, 100% { transform: translateY(-50%); }
+  50%       { transform: translateY(calc(-50% - 6px)); }
 }
 
+
 .hero-avatar-img {
-  width: 96px;
+  width: 64px;
   height: auto;
   display: block;
 }
 
 .hero-welcome-img {
-  width: 118px;
+  width: 80px;
   height: auto;
   display: block;
   margin-top: -2px;
-  margin-left: 30px;
+  margin-left: -20px;
 }
 
 .hero-title {
@@ -214,8 +227,8 @@ body {
   border: 1px dashed #d3d1fe;
   padding: 24px clamp(28px, 8vw, 100px) 36px;
   width: 100%;
-  max-width: 820px;
-  min-height: 260px;
+  max-width: 680px;
+  min-height: 200px;
   margin-top: 24px;
   display: flex;
   flex-direction: column;
@@ -1520,6 +1533,16 @@ body {
   opacity: 0.65;
 }
 
+.blurred-icon-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #7C5CFC;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
 .insights-locked-overlay {
   position: absolute;
   inset: 0;
@@ -1559,6 +1582,31 @@ body {
   font-style: italic;
   color: #E91E8C;
   font-weight: 900;
+}
+
+.locked-avatar-group {
+  position: absolute;
+  left: calc(50% - 420px);
+  bottom: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  pointer-events: none;
+  animation: float 3s ease-in-out infinite;
+}
+
+.locked-avatar-img {
+  width: 72px;
+  height: auto;
+  display: block;
+}
+
+.locked-welcome-img {
+  width: 88px;
+  height: auto;
+  display: block;
+  margin-top: -2px;
+  margin-left: -20px;
 }
 
 .locked-card {
