@@ -13,6 +13,21 @@ interface Props {
 
 const VISIBLE = 4
 
+const PLACEHOLDER_INSIGHTS = [
+  'Your navigation hierarchy may be creating decision fatigue for repeat users who access multiple views per session.',
+  'Color contrast ratios in secondary data labels likely fall below WCAG AA standards in low-light or dark-mode environments.',
+  'Information density on your overview panel may exceed optimal cognitive load thresholds, slowing time-to-insight.',
+  'Chart tooltip and hover states appear to lack sufficient visual affordance for first-time and infrequent users.',
+  'Mobile viewport breakpoints likely introduce layout shifts that disrupt user scanning patterns on smaller screens.',
+  'Missing empty-state illustrations on zero-data tiles leave users uncertain whether data is loading or genuinely absent.',
+  'Drill-down interactions lack sufficient visual feedback, causing users to over-click and lose their place in the hierarchy.',
+  'Axis labels on time-series charts are truncated at narrow widths, removing critical context for trend interpretation.',
+  'Filter and date-range controls are positioned inconsistently across views, increasing relearning cost per session.',
+  'Alert and status indicators use color alone without a secondary visual cue, creating accessibility gaps.',
+  'The primary CTA on each tile competes visually with secondary actions, slowing decision speed for power users.',
+  'Cross-panel data relationships are not visually linked, requiring users to manually reconcile numbers across tiles.',
+]
+
 const ICON_PROPS = {
   width: 20, height: 20, viewBox: '0 0 24 24', fill: 'none',
   stroke: 'currentColor', strokeWidth: 2,
@@ -102,7 +117,8 @@ function serializeReport(result: AuditResult): string {
 export default function ResultScreen({ result, error, onReset }: Props) {
   const ranked = result ? [...result.insights].sort((a, b) => a.priority - b.priority) : []
   const visible = ranked.slice(0, VISIBLE)
-  const lockedItems = ranked.slice(VISIBLE)
+  const realLocked = ranked.slice(VISIBLE)
+  const blurredTexts = [...realLocked.map(it => it.text), ...PLACEHOLDER_INSIGHTS].slice(0, 12)
 
   const handleDownload = () => {
     if (!result) return
@@ -184,34 +200,45 @@ export default function ResultScreen({ result, error, onReset }: Props) {
                   ))}
                 </ul>
 
-                {lockedItems.length > 0 && (
-                  <div className="insights-locked-wrap">
-                    <ul className="insights-locked-list">
-                      {lockedItems.slice(0, 8).map((it, i) => (
-                        <li className="insight-item" key={i}>
-                          <img src={starIcon} alt="" className="insight-sparkle" />{it.text}
-                        </li>
-                      ))}
-                    </ul>
-                    <div className="insights-locked-overlay">
-                      <div className="locked-card">
-                        <div className="locked-title">Book a Free 30-Minute UX Audit</div>
-                        <div className="locked-tagline">Human Expertise. AI-Powered Analysis.</div>
-                        <div className="locked-desc">
-                          Identify critical gaps before they become costly mistakes
-                        </div>
-                        <a
-                          className="locked-cta"
-                          href="https://calendly.com/triolla/pitangoux-introductory-meeting-clone?month=2026-06"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          Schedule My Expert Review ASAP
-                        </a>
+                <div className="insights-locked-wrap">
+                  <ul className="insights-locked-list">
+                    {blurredTexts.map((text, i) => (
+                      <li className="insight-item" key={i}>
+                        <img src={starIcon} alt="" className="insight-sparkle" />{text}
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="insights-locked-overlay">
+                    <p className="locked-teaser">
+                      There is a ton of <em>deeper insight</em> into this
+                    </p>
+                    <div className="locked-card">
+                      <div className="locked-title">Book a Free 30-Minute UX Audit</div>
+                      <div className="locked-tagline">Human Expertise. AI-Powered Analysis.</div>
+                      <div className="locked-desc">
+                        Identify critical gaps before they become costly mistakes
                       </div>
+                      <a
+                        className="locked-cta"
+                        href="https://calendly.com/triolla/pitangoux-introductory-meeting-clone?month=2026-06"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                          <line x1="16" y1="2" x2="16" y2="6" />
+                          <line x1="8" y1="2" x2="8" y2="6" />
+                          <line x1="3" y1="10" x2="21" y2="10" />
+                        </svg>
+                        Schedule My Expert Review ASAP
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <line x1="5" y1="12" x2="19" y2="12" />
+                          <polyline points="12 5 19 12 12 19" />
+                        </svg>
+                      </a>
                     </div>
                   </div>
-                )}
+                </div>
               </div>
             </>
           )}
@@ -239,6 +266,13 @@ export default function ResultScreen({ result, error, onReset }: Props) {
           </div>
         </div>
       </section>
+
+      {/* Footer */}
+      <footer className="footer">
+        <a href="https://triolla.io/" target="_blank" rel="noopener noreferrer">
+          <img src={triollaLogo} alt="Triolla" className="footer-logo" />
+        </a>
+      </footer>
     </div>
   )
 }
