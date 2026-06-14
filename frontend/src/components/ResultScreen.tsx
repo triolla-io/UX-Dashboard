@@ -218,11 +218,18 @@ export default function ResultScreen({ result, error, onReset }: Props) {
                       <div className="locked-desc">
                         Identify critical gaps before they become costly mistakes
                       </div>
-                      <a
+                      <button
+                        type="button"
                         className="locked-cta"
-                        href="https://calendly.com/triolla/pitangoux-introductory-meeting-clone?month=2026-06"
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          const cal = (window as any).Calendly
+                          if (!cal) return
+                          // remove any stale popup before opening a new one
+                          document.querySelectorAll('.calendly-overlay').forEach(el => el.remove())
+                          cal.initPopupWidget({ url: 'https://calendly.com/triolla/pitangoux-introductory-meeting-clone' })
+                        }}
                       >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                           <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
@@ -235,7 +242,7 @@ export default function ResultScreen({ result, error, onReset }: Props) {
                           <line x1="5" y1="12" x2="19" y2="12" />
                           <polyline points="12 5 19 12 12 19" />
                         </svg>
-                      </a>
+                      </button>
                     </div>
                   </div>
                 </div>
