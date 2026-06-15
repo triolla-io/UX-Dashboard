@@ -2,12 +2,8 @@ import { Router, Request, Response } from 'express'
 import { readFileSync } from 'fs'
 import path from 'path'
 import { buildAuditResult, parseAuditJson } from '../audit'
-import { createRateLimiter } from '../middleware/rateLimit'
 
 const router = Router()
-
-const ipLimit = createRateLimiter(2)
-router.use(ipLimit)
 
 const ALLOWED_MEDIA_TYPES = ['image/png', 'image/jpeg', 'image/webp']
 
@@ -85,6 +81,10 @@ router.post('/', async (req: Request, res: Response) => {
 
     if (!image || typeof image !== 'string') {
       return res.status(400).json({ error: 'image is required' })
+    }
+    // base64 of a ~5MB image is ~6.7MB; reject anything larger
+    if (image.length > 7_000_000) {
+      return res.status(413).json({ error: 'image too large' })
     }
     if (!ALLOWED_MEDIA_TYPES.includes(mediaType)) {
       return res.status(400).json({ error: 'mediaType must be image/png, image/jpeg, or image/webp' })
