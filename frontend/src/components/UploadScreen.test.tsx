@@ -4,6 +4,10 @@ import userEvent from '@testing-library/user-event'
 import UploadScreen from './UploadScreen'
 
 describe('UploadScreen', () => {
+  beforeEach(() => {
+    localStorage.clear()
+  })
+
   it('renders the dropzone', () => {
     render(<UploadScreen onSubmit={vi.fn()} />)
     expect(screen.getByTestId('dropzone')).toBeInTheDocument()
@@ -62,5 +66,31 @@ describe('UploadScreen', () => {
     expect(mediaType).toBe('image/png')
     expect(typeof base64).toBe('string')
     expect(base64.length).toBeGreaterThan(0)
+  })
+})
+
+describe('usage limit modal', () => {
+  beforeEach(() => {
+    localStorage.clear()
+  })
+
+  it('shows blocked modal when serverBlocked prop is true', async () => {
+    render(<UploadScreen onSubmit={vi.fn()} serverBlocked={true} />)
+    await vi.waitFor(() => screen.getByTestId('blocked-modal'))
+    expect(screen.getByTestId('blocked-modal')).toBeInTheDocument()
+  })
+
+  it('closes blocked modal when X is clicked', async () => {
+    render(<UploadScreen onSubmit={vi.fn()} serverBlocked={true} />)
+    await vi.waitFor(() => screen.getByTestId('blocked-modal'))
+    await userEvent.click(screen.getByTestId('blocked-modal-close'))
+    expect(screen.queryByTestId('blocked-modal')).not.toBeInTheDocument()
+  })
+
+  it('closes blocked modal when backdrop is clicked', async () => {
+    render(<UploadScreen onSubmit={vi.fn()} serverBlocked={true} />)
+    await vi.waitFor(() => screen.getByTestId('blocked-modal'))
+    await userEvent.click(screen.getByTestId('blocked-modal'))
+    expect(screen.queryByTestId('blocked-modal')).not.toBeInTheDocument()
   })
 })

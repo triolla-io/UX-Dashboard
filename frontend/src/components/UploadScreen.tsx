@@ -1,4 +1,4 @@
-import { useState, useRef, DragEvent, ChangeEvent } from 'react'
+import { useState, useRef, useEffect, DragEvent, ChangeEvent } from 'react'
 import uploadIcon from '../assests/upload.svg'
 import uploadIconHover from '../assests/upload_hover.svg'
 const welcomeImg = '/welcomehomepage.svg'
@@ -9,10 +9,14 @@ import bannerImg from '../assests/Banner.png'
 
 interface Props {
   onSubmit: (image: string, mediaType: string, context: string) => void
+  serverBlocked?: boolean
 }
 
 const ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/webp']
 const MAX_BYTES = 10 * 1024 * 1024
+const USAGE_KEY = 'triolla_usage_count'
+const MAX_FREE_USES = 2
+const CALENDLY_URL = 'https://calendar.google.com/calendar/appointments/schedules/AcZssZ0uHSTPJ7s4d1EFxBgR1FK_dmpP9BP3DwkKbIggAvjjuFzVnFOpHjWfkzRvZB4BfZsGv4m-Fy1_?gv=true'
 
 function validateFile(file: File): string | null {
   if (!ALLOWED_TYPES.includes(file.type)) {
@@ -22,6 +26,14 @@ function validateFile(file: File): string | null {
     return 'File is too large. Max size is 10MB.'
   }
   return null
+}
+
+function getUsageCount(): number {
+  return parseInt(localStorage.getItem(USAGE_KEY) || '0', 10)
+}
+
+function incrementUsage(): void {
+  localStorage.setItem(USAGE_KEY, String(getUsageCount() + 1))
 }
 
 const SEGMENTS = [
@@ -39,14 +51,24 @@ const SEGMENTS = [
   'Dev',
 ]
 
-export default function UploadScreen({ onSubmit }: Props) {
+export default function UploadScreen({ onSubmit, serverBlocked }: Props) {
   const [error, setError] = useState<string | null>(null)
   const [dragOver, setDragOver] = useState(false)
   const [pendingFile, setPendingFile] = useState<File | null>(null)
   const [selectedSegment, setSelectedSegment] = useState('')
+  const [showBlockedModal, setShowBlockedModal] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
+  useEffect(() => {
+    if (serverBlocked) setShowBlockedModal(true)
+  }, [serverBlocked])
+
   const readAndSubmit = (f: File, segment: string) => {
+    if (getUsageCount() >= MAX_FREE_USES) {
+      setShowBlockedModal(true)
+      return
+    }
+    incrementUsage()
     const reader = new FileReader()
     reader.onload = () => {
       const dataUrl = reader.result as string
@@ -95,6 +117,47 @@ export default function UploadScreen({ onSubmit }: Props) {
 
   return (
     <div>
+      {/* Blocked modal */}
+      {showBlockedModal && (
+        <div
+          className="seg-modal-overlay"
+          data-testid="blocked-modal"
+          onClick={() => setShowBlockedModal(false)}
+        >
+          <div className="locked-card" style={{ position: 'relative', maxWidth: 480 }} onClick={e => e.stopPropagation()}>
+            <button
+              type="button"
+              data-testid="blocked-modal-close"
+              onClick={() => setShowBlockedModal(false)}
+              style={{
+                position: 'absolute', top: 16, right: 16,
+                background: 'none', border: 'none', cursor: 'pointer',
+                color: 'rgba(255,255,255,0.6)', fontSize: 20, lineHeight: 1, padding: 4,
+              }}
+              aria-label="Close"
+            >✕</button>
+            <div className="locked-title">You've used your free analyses</div>
+            <div className="locked-tagline">Human Expertise. AI-Powered Analysis.</div>
+            <div className="locked-desc">
+              Want a deeper review? Book a free 30-minute session with a senior Triolla designer.
+            </div>
+            <button
+              type="button"
+              className="locked-cta"
+              onClick={() => window.open(CALENDLY_URL, '_blank', 'noopener,noreferrer')}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                <line x1="16" y1="2" x2="16" y2="6" />
+                <line x1="8" y1="2" x2="8" y2="6" />
+                <line x1="3" y1="10" x2="21" y2="10" />
+              </svg>
+              Schedule My Expert Review ASAP
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Segment modal — shown after file is selected */}
       {pendingFile && (
         <div className="seg-modal-overlay" onClick={handleModalSkip}>
@@ -149,7 +212,6 @@ export default function UploadScreen({ onSubmit }: Props) {
           Upload a screenshot and get <strong>Expert AI Analysis</strong> trained on 250+ dashboard projects we led in Triolla.
         </p>
 
-        {/* Dropzone — selecting/dropping a file opens the segment modal */}
         <div
           className={`dropzone-card${dragOver ? ' drag-over' : ''}`}
           onDrop={handleDrop}
