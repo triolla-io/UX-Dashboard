@@ -2,8 +2,12 @@ import { Router, Request, Response } from 'express'
 import { readFileSync } from 'fs'
 import path from 'path'
 import { buildAuditResult, parseAuditJson } from '../audit'
+import { createRateLimiter } from '../middleware/rateLimit'
 
 const router = Router()
+
+const ipLimit = createRateLimiter(2)
+router.use(ipLimit)
 
 const ALLOWED_MEDIA_TYPES = ['image/png', 'image/jpeg', 'image/webp']
 
