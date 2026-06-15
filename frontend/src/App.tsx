@@ -36,10 +36,29 @@ const initialState: FeedbackState = {
   error: null,
 }
 
+const USAGE_KEY = 'triolla_usage_count'
+const MAX_FREE_USES = 2
+
+function getUsageCount(): number {
+  return parseInt(localStorage.getItem(USAGE_KEY) || '0', 10)
+}
+
+function incrementUsage(): void {
+  localStorage.setItem(USAGE_KEY, String(getUsageCount() + 1))
+}
+
 export default function App() {
-  const [state, setState] = useState<FeedbackState>(initialState)
+  const [state, setState] = useState<FeedbackState>(() => {
+    if (getUsageCount() >= MAX_FREE_USES) return { view: 'blocked', result: null, error: null }
+    return initialState
+  })
 
   const handleSubmit = async (image: string, mediaType: string, context: string) => {
+    if (getUsageCount() >= MAX_FREE_USES) {
+      setState({ view: 'blocked', result: null, error: null })
+      return
+    }
+    incrementUsage()
     setState({ view: 'loading', result: null, error: null })
     try {
       const res = await fetch('/api/feedback', {
@@ -63,6 +82,11 @@ export default function App() {
         }
       }
 
+      if (res.status === 429) {
+        setState({ view: 'blocked', result: null, error: null })
+        return
+      }
+
       if (!res.ok) {
         throw new Error(data.error || 'Something went wrong. Please try again later.')
       }
@@ -82,6 +106,7 @@ export default function App() {
   const handleReset = () => setState(initialState)
 
   if (state.view === 'loading') return <LoadingScreen />
+  if (state.view === 'blocked') return <ResultScreen result={null} error={null} onReset={handleReset} blocked />
   if (state.view === 'result') {
     return <ResultScreen result={state.result} error={state.error} onReset={handleReset} />
   }
