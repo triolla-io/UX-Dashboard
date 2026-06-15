@@ -1,4 +1,4 @@
-export type View = 'upload' | 'loading' | 'result'
+export type View = 'upload' | 'loading' | 'result' | 'blocked'
 
 export type InsightCategory = 'ux' | 'visualDesign' | 'usability' | 'dataClarity'
 

@@ -86,7 +86,7 @@ export default function UploadCard({ onSubmit }: Props) {
         ) : (
           <>
             <p className="dropzone-label">Drop your dashboard screenshot</p>
-            <p className="dropzone-hint">or browse files — PNG, JPG, JPEG</p>
+            <p className="dropzone-hint">or browse files — PNG, JPG, JPEG · max 10MB</p>
           </>
         )}
         <input ref={inputRef} type="file" onChange={handleChange} style={{ display: 'none' }} data-testid="file-input" />

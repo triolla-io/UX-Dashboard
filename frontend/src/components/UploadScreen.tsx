@@ -68,6 +68,10 @@ export default function UploadScreen({ onSubmit }: Props) {
   const handleDrop = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault()
     setDragOver(false)
+    if (e.dataTransfer.files.length > 1) {
+      setError('Please upload one file at a time.')
+      return
+    }
     const f = e.dataTransfer.files[0]
     if (f) submitFile(f)
   }
@@ -160,7 +164,7 @@ export default function UploadScreen({ onSubmit }: Props) {
           </div>
           <div className="dropzone-text">
             <p className="dropzone-label">Drop your dashboard screenshot</p>
-            <p className="dropzone-hint">or browse files — PNG, JPG, JPEG</p>
+            <p className="dropzone-hint">or browse files — PNG, JPG, JPEG · max 10MB</p>
           </div>
           <input
             ref={inputRef}
