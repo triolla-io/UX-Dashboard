@@ -1,4 +1,4 @@
-export type View = 'upload' | 'loading' | 'result' | 'blocked'
+export type View = 'upload' | 'loading' | 'result'
 
 export type InsightCategory = 'ux' | 'visualDesign' | 'usability' | 'dataClarity'
 
@@ -25,4 +25,5 @@ export interface FeedbackState {
   view: View
   result: AuditResult | null
   error: string | null
+  serverBlocked?: boolean
 }
