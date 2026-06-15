@@ -11,7 +11,6 @@ interface Props {
   result: AuditResult | null
   error: string | null
   onReset: () => void
-  blocked?: boolean
 }
 
 const VISIBLE = 4
@@ -162,7 +161,7 @@ function serializeReport(result: AuditResult): string {
   return lines.join('\n')
 }
 
-export default function ResultScreen({ result, error, onReset, blocked }: Props) {
+export default function ResultScreen({ result, error, onReset }: Props) {
   const openScheduler = () => {
     window.open(CALENDLY_URL, '_blank', 'noopener,noreferrer')
   }
@@ -184,46 +183,6 @@ export default function ResultScreen({ result, error, onReset, blocked }: Props)
     a.click()
     document.body.removeChild(a)
     setTimeout(() => URL.revokeObjectURL(url), 0)
-  }
-
-  if (blocked) {
-    return (
-      <div>
-        <div className="top-banner">
-          <img src={sparkIcon} alt="" className="banner-spark" />
-          Triolla AI Enterprise Dashboard Intelligence
-        </div>
-        <nav className="nav">
-          <a href="https://triolla.io/" target="_blank" rel="noopener noreferrer"><img src={triollaLogo} alt="Triolla" className="nav-logo" /></a>
-        </nav>
-        <section className="hero">
-          <div className="locked-avatar-group">
-            <img src={welcomeImg} alt="" className="locked-avatar-img" />
-          </div>
-          <div className="locked-card" style={{ maxWidth: 480, margin: '0 auto' }}>
-            <div className="locked-title">You've used your free analyses</div>
-            <div className="locked-tagline">Human Expertise. AI-Powered Analysis.</div>
-            <div className="locked-desc">
-              Want a deeper review? Book a free 30-minute session with a senior Triolla designer.
-            </div>
-            <button type="button" className="locked-cta" onClick={openScheduler}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                <line x1="16" y1="2" x2="16" y2="6" />
-                <line x1="8" y1="2" x2="8" y2="6" />
-                <line x1="3" y1="10" x2="21" y2="10" />
-              </svg>
-              Schedule My Expert Review ASAP
-            </button>
-          </div>
-        </section>
-        <footer className="footer">
-          <a href="https://triolla.io/" target="_blank" rel="noopener noreferrer">
-            <img src={triollaLogo} alt="Triolla" className="footer-logo" />
-          </a>
-        </footer>
-      </div>
-    )
   }
 
   return (
