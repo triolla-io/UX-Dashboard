@@ -82,12 +82,11 @@ export default function App() {
         }
       }
 
-      if (res.status === 429) {
-        setState({ view: 'blocked', result: null, error: null })
-        return
-      }
-
       if (!res.ok) {
+        if (res.status === 429) {
+          setState({ view: 'blocked', result: null, error: null })
+          return
+        }
         throw new Error(data.error || 'Something went wrong. Please try again later.')
       }
       if (typeof data.overall !== 'number' || !data.categories) {
