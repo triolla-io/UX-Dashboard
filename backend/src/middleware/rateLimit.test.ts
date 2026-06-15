@@ -48,4 +48,16 @@ describe('createRateLimiter', () => {
     limiter(makeReq('9.9.9.9'), makeRes(), next)
     expect(next).toHaveBeenCalledTimes(3)
   })
+
+  it('uses x-forwarded-for header over req.ip', () => {
+    const next = vi.fn()
+    const reqWithHeader = { ip: '9.9.9.9', headers: { 'x-forwarded-for': '1.2.3.4, 5.6.7.8' } } as unknown as Request
+    limiter(reqWithHeader, makeRes(), next)
+    limiter(reqWithHeader, makeRes(), next)
+    // third request from same forwarded IP should be blocked
+    const res = makeRes()
+    limiter(reqWithHeader, res, next)
+    expect(next).toHaveBeenCalledTimes(2)
+    expect(res._status).toBe(429)
+  })
 })
