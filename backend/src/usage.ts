@@ -34,6 +34,7 @@ export interface UsageStore {
   countSince(since: number): number
   listRecent(limit: number): UsageRow[]
   stats(now: number): UsageStats
+  expireImages(cutoff: number): string[]
   close(): void
 }
 
@@ -95,6 +96,12 @@ export function createUsageStore(dbPath: string): UsageStore {
   const ipSinceStmt = db.prepare('SELECT COUNT(*) AS c FROM usage WHERE ip = ? AND at >= ?')
   const recentStmt = db.prepare('SELECT * FROM usage ORDER BY at DESC, id DESC LIMIT ?')
   const allAtStmt = db.prepare('SELECT at FROM usage')
+  const expiredSelectStmt = db.prepare(
+    'SELECT image_path FROM usage WHERE image_path IS NOT NULL AND at < ?'
+  )
+  const expiredUpdateStmt = db.prepare(
+    'UPDATE usage SET image_path = NULL WHERE image_path IS NOT NULL AND at < ?'
+  )
 
   return {
     record(entry: UsageEntry) {
@@ -129,6 +136,13 @@ export function createUsageStore(dbPath: string): UsageStore {
         .map(([date, runs]) => ({ date, runs }))
         .sort((a, b) => (a.date < b.date ? 1 : -1))
       return { totalRuns, uniqueUsers, runsLast24h, perDay }
+    },
+    expireImages(cutoff: number): string[] {
+      const paths = (expiredSelectStmt.all(cutoff) as Array<{ image_path: string }>).map(
+        (r) => r.image_path
+      )
+      expiredUpdateStmt.run(cutoff)
+      return paths
     },
     close() {
       db.close()

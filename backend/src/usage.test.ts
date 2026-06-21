@@ -60,4 +60,17 @@ describe('usage store', () => {
     expect(perDay[0]).toEqual({ date: '1970-01-11', runs: 2 })
     expect(perDay[1]).toEqual({ date: '1970-01-10', runs: 1 })
   })
+
+  test('expireImages nulls and returns paths older than cutoff', () => {
+    const s = createUsageStore(':memory:')
+    rec(s, 'ip-a', 1000, { imagePath: '/u/old.png' })
+    rec(s, 'ip-b', 5000, { imagePath: '/u/new.png' })
+    const cleared = s.expireImages(3000)
+    expect(cleared).toEqual(['/u/old.png'])
+    // calling again clears nothing (already nulled)
+    expect(s.expireImages(3000)).toEqual([])
+    const rows = s.listRecent(10)
+    expect(rows.find((r) => r.at === 1000)!.imagePath).toBeNull()
+    expect(rows.find((r) => r.at === 5000)!.imagePath).toBe('/u/new.png')
+  })
 })
