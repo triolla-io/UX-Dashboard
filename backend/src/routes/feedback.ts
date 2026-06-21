@@ -2,8 +2,9 @@ import { Router, Request, Response } from 'express'
 import { readFileSync } from 'fs'
 import path from 'path'
 import { buildAuditResult, parseAuditJson } from '../audit'
-
-const router = Router()
+import type { UsageStore } from '../usage'
+import { saveImage } from '../imageStore'
+import { clientIp } from '../util/clientIp'
 
 const ALLOWED_MEDIA_TYPES = ['image/png', 'image/jpeg', 'image/webp']
 
@@ -73,69 +74,88 @@ async function callModel(image: string, mediaType: string, contextText: string, 
   return stripThinking(raw)
 }
 
-router.post('/', async (req: Request, res: Response) => {
-  // Wrap everything — in Node 22, any unhandled async throw crashes the process
-  try {
-    const body = req.body ?? {}
-    const { image, mediaType, context } = body
+export function createFeedbackRouter(deps: { store: UsageStore; uploadDir: string }): Router {
+  const router = Router()
 
-    if (!image || typeof image !== 'string') {
-      return res.status(400).json({ error: 'image is required' })
-    }
-    // base64 of a ~5MB image is ~6.7MB; reject anything larger
-    if (image.length > 7_000_000) {
-      return res.status(413).json({ error: 'image too large' })
-    }
-    if (!ALLOWED_MEDIA_TYPES.includes(mediaType)) {
-      return res.status(400).json({ error: 'mediaType must be image/png, image/jpeg, or image/webp' })
-    }
-
-    const contextText = context ? String(context).slice(0, 200) : ''
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 60000)
-
+  router.post('/', async (req: Request, res: Response) => {
+    // Wrap everything — in Node 22, any unhandled async throw crashes the process
     try {
-      let lastParseError: unknown
-      const primaryModel = process.env.OPENROUTER_MODEL || FALLBACK_MODEL
-      const models = primaryModel !== FALLBACK_MODEL ? [primaryModel, FALLBACK_MODEL] : [primaryModel, primaryModel]
-      for (let attempt = 0; attempt < 2; attempt++) {
-        const content = await callModel(image, mediaType, contextText, controller.signal, models[attempt])
-        if (looksLikeRefusal(content)) {
-          console.error(`feedback: attempt ${attempt + 1} looks like refusal:`, content.slice(0, 200))
-          lastParseError = new Error('model refused to return JSON')
-          continue
-        }
-        try {
-          const audit = buildAuditResult(parseAuditJson(content))
-          clearTimeout(timeoutId)
-          return res.json(audit)
-        } catch (e) {
-          console.error(`feedback: attempt ${attempt + 1} parse/validation failed:`, (e as Error).message, content.slice(0, 200))
-          lastParseError = e
-        }
-      }
-      clearTimeout(timeoutId)
-      console.error('feedback: all attempts failed, lastError:', lastParseError)
-      return res.status(502).json({ error: 'The analysis could not be completed. Please try again.' })
-    } catch (e) {
-      clearTimeout(timeoutId)
-      if (e instanceof Error && e.name === 'AbortError') {
-        return res.status(504).json({ error: 'The analysis took too long. Please try again.' })
-      }
-      if (e instanceof OpenRouterError) {
-        console.error('feedback: OpenRouterError:', (e as Error).message)
-        return res.status(502).json({ error: (e as Error).message })
-      }
-      console.error('feedback: unexpected error:', e)
-      return res.status(500).json({ error: 'Something went wrong. Please try again later.' })
-    }
-  } catch (e) {
-    // Safety net — ensures Node process never crashes from this route
-    console.error('feedback: top-level catch:', e)
-    if (!res.headersSent) {
-      res.status(500).json({ error: 'Something went wrong. Please try again later.' })
-    }
-  }
-})
+      const body = req.body ?? {}
+      const { image, mediaType, context } = body
 
-export default router
+      if (!image || typeof image !== 'string') {
+        return res.status(400).json({ error: 'image is required' })
+      }
+      // base64 of a ~5MB image is ~6.7MB; reject anything larger
+      if (image.length > 7_000_000) {
+        return res.status(413).json({ error: 'image too large' })
+      }
+      if (!ALLOWED_MEDIA_TYPES.includes(mediaType)) {
+        return res.status(400).json({ error: 'mediaType must be image/png, image/jpeg, or image/webp' })
+      }
+
+      const contextText = context ? String(context).slice(0, 200) : ''
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 60000)
+
+      try {
+        let lastParseError: unknown
+        const primaryModel = process.env.OPENROUTER_MODEL || FALLBACK_MODEL
+        const models = primaryModel !== FALLBACK_MODEL ? [primaryModel, FALLBACK_MODEL] : [primaryModel, primaryModel]
+        for (let attempt = 0; attempt < 2; attempt++) {
+          const content = await callModel(image, mediaType, contextText, controller.signal, models[attempt])
+          if (looksLikeRefusal(content)) {
+            console.error(`feedback: attempt ${attempt + 1} looks like refusal:`, content.slice(0, 200))
+            lastParseError = new Error('model refused to return JSON')
+            continue
+          }
+          try {
+            const audit = buildAuditResult(parseAuditJson(content))
+            clearTimeout(timeoutId)
+            // --- log the successful audit ---
+            let imagePath: string | null = null
+            try {
+              imagePath = saveImage(deps.uploadDir, image, mediaType)
+            } catch (e) {
+              console.error('feedback: failed to save image:', (e as Error).message)
+            }
+            deps.store.record({
+              ip: clientIp(req),
+              at: Date.now(),
+              imagePath,
+              mediaType,
+              context: contextText,
+              scores: audit,
+            })
+            return res.json(audit)
+          } catch (e) {
+            console.error(`feedback: attempt ${attempt + 1} parse/validation failed:`, (e as Error).message, content.slice(0, 200))
+            lastParseError = e
+          }
+        }
+        clearTimeout(timeoutId)
+        console.error('feedback: all attempts failed, lastError:', lastParseError)
+        return res.status(502).json({ error: 'The analysis could not be completed. Please try again.' })
+      } catch (e) {
+        clearTimeout(timeoutId)
+        if (e instanceof Error && e.name === 'AbortError') {
+          return res.status(504).json({ error: 'The analysis took too long. Please try again.' })
+        }
+        if (e instanceof OpenRouterError) {
+          console.error('feedback: OpenRouterError:', (e as Error).message)
+          return res.status(502).json({ error: (e as Error).message })
+        }
+        console.error('feedback: unexpected error:', e)
+        return res.status(500).json({ error: 'Something went wrong. Please try again later.' })
+      }
+    } catch (e) {
+      // Safety net — ensures Node process never crashes from this route
+      console.error('feedback: top-level catch:', e)
+      if (!res.headersSent) {
+        res.status(500).json({ error: 'Something went wrong. Please try again later.' })
+      }
+    }
+  })
+
+  return router
+}
