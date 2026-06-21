@@ -16,6 +16,7 @@ export function createTurnstile(secret: string | undefined) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ secret, response: token, remoteip: clientIp(req) }),
       })
+      if (!resp.ok) throw new Error(`turnstile siteverify HTTP ${resp.status}`)
       const data = (await resp.json()) as { success?: boolean }
       if (data.success) return next()
     } catch (e) {

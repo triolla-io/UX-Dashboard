@@ -35,7 +35,7 @@ describe('turnstile middleware', () => {
   })
 
   it('passes when Cloudflare returns success', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ json: async () => ({ success: true }) }))
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({ success: true }) }))
     const mw = createTurnstile('secret')
     const next = vi.fn()
     await mw(makeReq({ turnstileToken: 'good' }), makeRes(), next)
@@ -43,12 +43,23 @@ describe('turnstile middleware', () => {
   })
 
   it('rejects with 403 when Cloudflare returns failure', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ json: async () => ({ success: false }) }))
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({ success: false }) }))
     const mw = createTurnstile('secret')
     const next = vi.fn()
     const res = makeRes()
     await mw(makeReq({ turnstileToken: 'bad' }), res, next)
     expect(next).not.toHaveBeenCalled()
     expect(res._status).toBe(403)
+  })
+
+  it('rejects with 403 when the verification request throws', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network down')))
+    const mw = createTurnstile('secret')
+    const next = vi.fn()
+    const res = makeRes()
+    await mw(makeReq({ turnstileToken: 'whatever' }), res, next)
+    expect(next).not.toHaveBeenCalled()
+    expect(res._status).toBe(403)
+    expect((res._body as { error: string }).error).toBe('verification_failed')
   })
 })
