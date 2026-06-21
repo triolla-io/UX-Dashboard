@@ -86,8 +86,8 @@ export function createFeedbackRouter(deps: { store: UsageStore; uploadDir: strin
       if (!image || typeof image !== 'string') {
         return res.status(400).json({ error: 'image is required' })
       }
-      // base64 of a ~5MB image is ~6.7MB; reject anything larger
-      if (image.length > 7_000_000) {
+      // Frontend allows up to 10MB; base64 of 10MB is ~14M chars. Reject larger.
+      if (image.length > 14_000_000) {
         return res.status(413).json({ error: 'image too large' })
       }
       if (!ALLOWED_MEDIA_TYPES.includes(mediaType)) {

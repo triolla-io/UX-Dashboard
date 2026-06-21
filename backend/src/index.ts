@@ -15,7 +15,10 @@ dotenv.config()
 
 const app = express()
 app.use(cors())
-app.use(express.json({ limit: '8mb' }))
+// Body limit must exceed the base64 of the 10MB max upload the UI allows
+// (10MB → ~14MB base64 + JSON overhead), or large screenshots 500 with
+// "request entity too large" before the route's own size check runs.
+app.use(express.json({ limit: '16mb' }))
 
 const usageDbPath =
   process.env.USAGE_DB_PATH ?? (process.env.NODE_ENV === 'test' ? ':memory:' : 'data/usage.db')
