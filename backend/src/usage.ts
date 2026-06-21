@@ -33,6 +33,7 @@ export interface UsageStore {
   countByIpSince(ip: string, since: number): number
   countSince(since: number): number
   listRecent(limit: number): UsageRow[]
+  getById(id: number): UsageRow | undefined
   stats(now: number): UsageStats
   expireImages(cutoff: number): string[]
   close(): void
@@ -73,6 +74,36 @@ export function createUsageStore(dbPath: string): UsageStore {
   }
   const db = new Database(dbPath)
   db.pragma('journal_mode = WAL')
+
+  // Migration: if the usage table exists with the OLD schema (ip_hash column, no ip column),
+  // rename it and re-create with the new schema, preserving history best-effort.
+  interface TableInfoRow { name: string }
+  const tableInfo = db.prepare("PRAGMA table_info(usage)").all() as TableInfoRow[]
+  if (tableInfo.length > 0) {
+    const hasIp = tableInfo.some((col) => col.name === 'ip')
+    if (!hasIp) {
+      // Old schema detected — migrate
+      db.exec('ALTER TABLE usage RENAME TO usage_old')
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS usage (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          ip TEXT NOT NULL,
+          at INTEGER NOT NULL,
+          image_path TEXT,
+          media_type TEXT,
+          context TEXT,
+          scores_json TEXT
+        )
+      `)
+      try {
+        db.exec('INSERT INTO usage (ip, at) SELECT ip_hash, at FROM usage_old')
+      } catch (e) {
+        console.warn('usage migration: could not copy old rows:', (e as Error).message)
+      }
+      db.exec('DROP TABLE usage_old')
+    }
+  }
+
   db.exec(`
     CREATE TABLE IF NOT EXISTS usage (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -95,6 +126,7 @@ export function createUsageStore(dbPath: string): UsageStore {
   const sinceStmt = db.prepare('SELECT COUNT(*) AS c FROM usage WHERE at >= ?')
   const ipSinceStmt = db.prepare('SELECT COUNT(*) AS c FROM usage WHERE ip = ? AND at >= ?')
   const recentStmt = db.prepare('SELECT * FROM usage ORDER BY at DESC, id DESC LIMIT ?')
+  const byIdStmt = db.prepare('SELECT * FROM usage WHERE id = ?')
   const allAtStmt = db.prepare('SELECT at FROM usage')
   const expiredSelectStmt = db.prepare(
     'SELECT image_path FROM usage WHERE image_path IS NOT NULL AND at < ?'
@@ -122,6 +154,10 @@ export function createUsageStore(dbPath: string): UsageStore {
     },
     listRecent(limit: number): UsageRow[] {
       return (recentStmt.all(limit) as DbRow[]).map(toRow)
+    },
+    getById(id: number): UsageRow | undefined {
+      const row = byIdStmt.get(id) as DbRow | undefined
+      return row ? toRow(row) : undefined
     },
     stats(now: number): UsageStats {
       const totalRuns = (totalStmt.get() as { c: number }).c

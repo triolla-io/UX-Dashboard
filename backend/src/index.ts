@@ -62,13 +62,13 @@ app.get('/api/stats', (req: Request, res: Response) => {
 
 app.get('/api/admin/log', (req: Request, res: Response) => {
   if (!checkToken(req)) return res.status(401).json({ error: 'unauthorized' })
-  const limit = Math.min(Number(req.query.limit ?? 200), 1000)
+  const limit = Math.min(Number(req.query.limit) || 200, 1000)
   res.json({ rows: usage.listRecent(limit) })
 })
 
 app.get('/api/admin/image/:id', (req: Request, res: Response) => {
   if (!checkToken(req)) return res.status(401).json({ error: 'unauthorized' })
-  const row = usage.listRecent(1000).find((r) => String(r.id) === req.params.id)
+  const row = usage.getById(Number(req.params.id))
   if (!row || !row.imagePath || !existsSync(row.imagePath)) {
     return res.status(404).json({ error: 'not_found' })
   }

@@ -32,4 +32,34 @@ describe('GET /api/admin/log', () => {
     expect(row).toHaveProperty('id')
     expect(row).toHaveProperty('at')
   })
+
+  it('returns 401 when STATS_TOKEN is set and no token is provided', async () => {
+    const prev = process.env.STATS_TOKEN
+    try {
+      process.env.STATS_TOKEN = 'secret'
+      const res = await request(app).get('/api/admin/log')
+      expect(res.status).toBe(401)
+    } finally {
+      if (prev === undefined) {
+        delete process.env.STATS_TOKEN
+      } else {
+        process.env.STATS_TOKEN = prev
+      }
+    }
+  })
+
+  it('returns 200 when STATS_TOKEN is set and correct token is provided', async () => {
+    const prev = process.env.STATS_TOKEN
+    try {
+      process.env.STATS_TOKEN = 'secret'
+      const res = await request(app).get('/api/admin/log?token=secret')
+      expect(res.status).toBe(200)
+    } finally {
+      if (prev === undefined) {
+        delete process.env.STATS_TOKEN
+      } else {
+        process.env.STATS_TOKEN = prev
+      }
+    }
+  })
 })

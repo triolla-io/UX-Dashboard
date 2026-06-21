@@ -1,4 +1,8 @@
 import { describe, test, expect } from 'vitest'
+import { mkdtempSync, rmdirSync, rmSync } from 'fs'
+import { join } from 'path'
+import { tmpdir } from 'os'
+import Database from 'better-sqlite3'
 import { createUsageStore } from './usage'
 
 const DAY = 24 * 60 * 60 * 1000
@@ -61,6 +65,18 @@ describe('usage store', () => {
     expect(perDay[1]).toEqual({ date: '1970-01-10', runs: 1 })
   })
 
+  test('getById returns the correct row or undefined', () => {
+    const s = createUsageStore(':memory:')
+    rec(s, 'ip-a', 1000)
+    rec(s, 'ip-b', 2000)
+    const rows = s.listRecent(10)
+    const row = s.getById(rows[0].id)
+    expect(row).toBeDefined()
+    expect(row!.ip).toBe(rows[0].ip)
+    expect(row!.at).toBe(rows[0].at)
+    expect(s.getById(99999)).toBeUndefined()
+  })
+
   test('expireImages nulls and returns paths older than cutoff', () => {
     const s = createUsageStore(':memory:')
     rec(s, 'ip-a', 1000, { imagePath: '/u/old.png' })
@@ -72,5 +88,44 @@ describe('usage store', () => {
     const rows = s.listRecent(10)
     expect(rows.find((r) => r.at === 1000)!.imagePath).toBeNull()
     expect(rows.find((r) => r.at === 5000)!.imagePath).toBe('/u/new.png')
+  })
+})
+
+describe('usage store migration', () => {
+  test('migrates old-schema (ip_hash) table and preserves rows', () => {
+    const tmpDir = mkdtempSync(join(tmpdir(), 'usage-migration-'))
+    const dbFile = join(tmpDir, 'usage.db')
+    try {
+      // Set up old-schema DB
+      const oldDb = new Database(dbFile)
+      oldDb.exec(`
+        CREATE TABLE usage (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          ip_hash TEXT NOT NULL,
+          at INTEGER NOT NULL
+        )
+      `)
+      oldDb.prepare("INSERT INTO usage (ip_hash, at) VALUES (?, ?)").run('abc123', 1000)
+      oldDb.close()
+
+      // Open via createUsageStore — should migrate transparently
+      const s = createUsageStore(dbFile)
+
+      // (a) new record does not throw
+      expect(() => s.record({ ip: '1.2.3.4', at: 2000 })).not.toThrow()
+
+      // (b) totalRuns includes old row + new row
+      expect(s.stats(3000).totalRuns).toBe(2)
+
+      // (c) old row migrated into ip column
+      expect(s.countByIpSince('abc123', 0)).toBe(1)
+
+      s.close()
+    } finally {
+      try { rmSync(dbFile) } catch {}
+      try { rmSync(dbFile + '-wal') } catch {}
+      try { rmSync(dbFile + '-shm') } catch {}
+      try { rmdirSync(tmpDir) } catch {}
+    }
   })
 })

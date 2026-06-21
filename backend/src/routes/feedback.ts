@@ -119,14 +119,18 @@ export function createFeedbackRouter(deps: { store: UsageStore; uploadDir: strin
             } catch (e) {
               console.error('feedback: failed to save image:', (e as Error).message)
             }
-            deps.store.record({
-              ip: clientIp(req),
-              at: Date.now(),
-              imagePath,
-              mediaType,
-              context: contextText,
-              scores: audit,
-            })
+            try {
+              deps.store.record({
+                ip: clientIp(req),
+                at: Date.now(),
+                imagePath,
+                mediaType,
+                context: contextText,
+                scores: audit,
+              })
+            } catch (e) {
+              console.error('feedback: failed to record usage:', (e as Error).message)
+            }
             return res.json(audit)
           } catch (e) {
             console.error(`feedback: attempt ${attempt + 1} parse/validation failed:`, (e as Error).message, content.slice(0, 200))
