@@ -2,7 +2,7 @@ import express, { NextFunction, Request, Response } from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import path from 'path'
-import { existsSync, createReadStream } from 'fs'
+import { existsSync, createReadStream, mkdirSync } from 'fs'
 import { createFeedbackRouter } from './routes/feedback'
 import { createIpRateLimiter, createGlobalRateLimiter, createGlobalDailyCap } from './middleware/rateLimit'
 import { createTurnstile } from './middleware/turnstile'
@@ -26,10 +26,16 @@ const MAX_FREE_USES = Number(process.env.MAX_FREE_USES ?? 2)
 const GLOBAL_DAILY_CAP = process.env.GLOBAL_DAILY_CAP ? Number(process.env.GLOBAL_DAILY_CAP) : null
 const RETENTION_DAYS = Number(process.env.IMAGE_RETENTION_DAYS ?? 30)
 
-// Blocklist shares its own sqlite handle (separate table; same file in prod).
-const blocklistDb = new Database(
-  process.env.NODE_ENV === 'test' ? ':memory:' : (process.env.BLOCKLIST_DB_PATH ?? 'data/usage.db')
-)
+// Blocklist shares the usage DB file by default (separate table). Defaulting to
+// usageDbPath — not a hardcoded relative path — guarantees it lands in the same
+// directory the usage store already created, so it can't fail to open when
+// USAGE_DB_PATH points at a mounted volume. BLOCKLIST_DB_PATH can still override.
+const blocklistDbPath =
+  process.env.NODE_ENV === 'test' ? ':memory:' : (process.env.BLOCKLIST_DB_PATH ?? usageDbPath)
+if (blocklistDbPath !== ':memory:') {
+  mkdirSync(path.dirname(path.resolve(blocklistDbPath)), { recursive: true })
+}
+const blocklistDb = new Database(blocklistDbPath)
 const blocklist = createBlocklist(blocklistDb)
 
 const globalLimiter = createGlobalRateLimiter(30, 60 * 1000)
