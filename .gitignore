@@ -15,6 +15,12 @@ backend/dist/
 .env.*
 *.local
 
+# Usage tracking DB (SQLite)
+data/
+*.db
+*.db-wal
+*.db-shm
+
 # Test coverage
 coverage/
 frontend/coverage/
