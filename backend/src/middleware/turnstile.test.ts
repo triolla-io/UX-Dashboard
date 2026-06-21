@@ -14,7 +14,7 @@ function makeRes() {
   return res as unknown as Response & { _status: number; _body: unknown }
 }
 
-afterEach(() => vi.unstubAllGlobals())
+afterEach(() => { vi.unstubAllGlobals() })
 
 describe('turnstile middleware', () => {
   it('passes through when no secret is configured', async () => {
