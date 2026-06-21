@@ -36,23 +36,26 @@ describe('UploadScreen', () => {
     expect(onSubmit).not.toHaveBeenCalled()
   })
 
-  it('auto-submits on valid PNG file selection', async () => {
+  // Selecting a valid file opens the segment modal; onSubmit fires after "Continue".
+  it('submits a valid PNG after confirming the segment modal', async () => {
     const onSubmit = vi.fn()
     render(<UploadScreen onSubmit={onSubmit} />)
     const file = new File(['image'], 'image.png', { type: 'image/png' })
     await userEvent.upload(screen.getByTestId('file-input'), file)
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Continue' }))
     await vi.waitFor(() => expect(onSubmit).toHaveBeenCalledOnce())
     const [, mediaType, context] = onSubmit.mock.calls[0]
     expect(mediaType).toBe('image/png')
-    expect(context).toBe('')
+    expect(context).toBe('') // no segment chosen
   })
 
-  it('auto-submits on valid WEBP file selection', async () => {
+  it('submits a valid WEBP after confirming the segment modal', async () => {
     const onSubmit = vi.fn()
     render(<UploadScreen onSubmit={onSubmit} />)
     const file = new File(['image'], 'image.webp', { type: 'image/webp' })
     await userEvent.upload(screen.getByTestId('file-input'), file)
+    await userEvent.click(screen.getByRole('button', { name: 'Continue' }))
     await vi.waitFor(() => expect(onSubmit).toHaveBeenCalledOnce())
   })
 
@@ -61,6 +64,7 @@ describe('UploadScreen', () => {
     render(<UploadScreen onSubmit={onSubmit} />)
     const file = new File(['hello'], 'image.png', { type: 'image/png' })
     await userEvent.upload(screen.getByTestId('file-input'), file)
+    await userEvent.click(screen.getByRole('button', { name: 'Continue' }))
     await vi.waitFor(() => expect(onSubmit).toHaveBeenCalledOnce())
     const [base64, mediaType] = onSubmit.mock.calls[0]
     expect(mediaType).toBe('image/png')

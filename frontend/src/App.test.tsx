@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import App from './App'
@@ -15,6 +15,12 @@ describe('App integration', () => {
     },
     insights: [{ text: 'No freshness timestamp on tiles', category: 'dataClarity', sentiment: 'issue', priority: 1 }],
   }
+
+  beforeEach(() => {
+    // Each test gets a fresh free-use count so the usage-limit modal
+    // doesn't intercept the submit flow.
+    localStorage.clear()
+  })
 
   afterEach(() => {
     vi.unstubAllGlobals()
@@ -34,6 +40,7 @@ describe('App integration', () => {
     render(<App />)
     const file = new File(['img'], 'shot.png', { type: 'image/png' })
     await userEvent.upload(screen.getByTestId('file-input'), file)
+    await userEvent.click(screen.getByRole('button', { name: 'Continue' }))
 
     await waitFor(() => expect(screen.getByRole('status')).toBeInTheDocument())
 
@@ -51,6 +58,7 @@ describe('App integration', () => {
     render(<App />)
     const file = new File(['img'], 'shot.png', { type: 'image/png' })
     await userEvent.upload(screen.getByTestId('file-input'), file)
+    await userEvent.click(screen.getByRole('button', { name: 'Continue' }))
 
     await waitFor(() => {
       expect(screen.getByRole('alert')).toHaveTextContent(
@@ -68,6 +76,7 @@ describe('App integration', () => {
     render(<App />)
     const file = new File(['img'], 'shot.png', { type: 'image/png' })
     await userEvent.upload(screen.getByTestId('file-input'), file)
+    await userEvent.click(screen.getByRole('button', { name: 'Continue' }))
 
     await waitFor(() => expect(screen.getByTestId('reset-button')).toBeInTheDocument())
     await userEvent.click(screen.getByTestId('reset-button'))

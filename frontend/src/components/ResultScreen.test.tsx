@@ -38,7 +38,8 @@ describe('ResultScreen', () => {
     const visible = screen.getAllByTestId('visible-insight')
     expect(visible).toHaveLength(4)
     expect(visible[0]).toHaveTextContent('Visible one B') // priority 1
-    expect(screen.getByText(/insights are locked/)).toHaveTextContent('2+ insights are locked')
+    // The remaining insights sit behind the locked upsell overlay
+    expect(screen.getByText('Book a Free 30-Minute UX Audit')).toBeInTheDocument()
   })
 
   it('shows an error and hides the report when error is present', () => {
