@@ -6,9 +6,10 @@ import starIcon from '../assests/star.svg'
 import triollaLogo from '../assests/triolla.svg'
 import sparkIcon from '../assests/spark.svg'
 import bannerImg from '../assests/Banner.png'
+import Turnstile from './Turnstile'
 
 interface Props {
-  onSubmit: (image: string, mediaType: string, context: string) => void
+  onSubmit: (image: string, mediaType: string, context: string, turnstileToken?: string) => void
   serverBlocked?: boolean
 }
 
@@ -57,6 +58,7 @@ export default function UploadScreen({ onSubmit, serverBlocked }: Props) {
   const [pendingFile, setPendingFile] = useState<File | null>(null)
   const [selectedSegment, setSelectedSegment] = useState('')
   const [showBlockedModal, setShowBlockedModal] = useState(false)
+  const [turnstileToken, setTurnstileToken] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -74,7 +76,7 @@ export default function UploadScreen({ onSubmit, serverBlocked }: Props) {
       const dataUrl = reader.result as string
       const base64 = dataUrl.split(',')[1]
       const context = segment ? `Industry segment: ${segment}` : ''
-      onSubmit(base64, f.type, context)
+      onSubmit(base64, f.type, context, turnstileToken)
     }
     reader.readAsDataURL(f)
   }
@@ -240,6 +242,8 @@ export default function UploadScreen({ onSubmit, serverBlocked }: Props) {
         {error && (
           <p role="alert" className="upload-error">{error}</p>
         )}
+
+        <Turnstile onToken={setTurnstileToken} />
 
         <p className="trust-row">
           Free <span>·</span> No Commitment <span>·</span> Results in &lt; 60s

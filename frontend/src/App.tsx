@@ -36,13 +36,13 @@ const initialState: FeedbackState = {
 export default function App() {
   const [state, setState] = useState<FeedbackState>(initialState)
 
-  const handleSubmit = async (image: string, mediaType: string, context: string) => {
+  const handleSubmit = async (image: string, mediaType: string, context: string, turnstileToken?: string) => {
     setState({ view: 'loading', result: null, error: null })
     try {
       const res = await fetch('/api/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image, mediaType, context }),
+        body: JSON.stringify({ image, mediaType, context, ...(turnstileToken ? { turnstileToken } : {}) }),
       })
 
       const raw = await res.text()
@@ -64,6 +64,12 @@ export default function App() {
         if (res.status === 429) {
           setState({ view: 'upload', result: null, error: null, serverBlocked: true })
           return
+        }
+        if (res.status === 403 && data.error === 'verification_failed') {
+          throw new Error('We could not verify your browser. Please refresh the page and try again.')
+        }
+        if (res.status === 403 && data.error === 'blocked') {
+          throw new Error('Access from this network has been blocked. Please contact us if you believe this is a mistake.')
         }
         throw new Error(data.error || 'Something went wrong. Please try again later.')
       }
