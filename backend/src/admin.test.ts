@@ -17,20 +17,38 @@ describe('GET /api/admin/log', () => {
   beforeEach(() => { vi.stubGlobal('fetch', vi.fn()) })
   afterEach(() => { vi.unstubAllGlobals() })
 
-  it('returns recent usage rows including ip and image id', async () => {
-    vi.mocked(fetch).mockResolvedValue(okModelResponse(MODEL_JSON))
-    await request(app)
-      .post('/api/feedback')
-      .set('x-forwarded-for', '5.5.5.5')
-      .send({ image: Buffer.from('z').toString('base64'), mediaType: 'image/png' })
+  it('returns recent usage rows including ip and image id (with token)', async () => {
+    const prev = process.env.STATS_TOKEN
+    try {
+      process.env.STATS_TOKEN = 'secret'
+      vi.mocked(fetch).mockResolvedValue(okModelResponse(MODEL_JSON))
+      await request(app)
+        .post('/api/feedback')
+        .set('x-forwarded-for', '5.5.5.5')
+        .send({ image: Buffer.from('z').toString('base64'), mediaType: 'image/png' })
 
-    const res = await request(app).get('/api/admin/log')
-    expect(res.status).toBe(200)
-    expect(Array.isArray(res.body.rows)).toBe(true)
-    const row = res.body.rows.find((r: { ip: string }) => r.ip === '5.5.5.5')
-    expect(row).toBeTruthy()
-    expect(row).toHaveProperty('id')
-    expect(row).toHaveProperty('at')
+      const res = await request(app).get('/api/admin/log?token=secret')
+      expect(res.status).toBe(200)
+      expect(Array.isArray(res.body.rows)).toBe(true)
+      const row = res.body.rows.find((r: { ip: string }) => r.ip === '5.5.5.5')
+      expect(row).toBeTruthy()
+      expect(row).toHaveProperty('id')
+      expect(row).toHaveProperty('at')
+    } finally {
+      if (prev === undefined) delete process.env.STATS_TOKEN
+      else process.env.STATS_TOKEN = prev
+    }
+  })
+
+  it('FAILS CLOSED: returns 401 when STATS_TOKEN is unset (admin not public)', async () => {
+    const prev = process.env.STATS_TOKEN
+    try {
+      delete process.env.STATS_TOKEN
+      const res = await request(app).get('/api/admin/log')
+      expect(res.status).toBe(401)
+    } finally {
+      if (prev !== undefined) process.env.STATS_TOKEN = prev
+    }
   })
 
   it('returns 401 when STATS_TOKEN is set and no token is provided', async () => {

@@ -55,19 +55,29 @@ function checkToken(req: Request): boolean {
   return provided === required
 }
 
+// Admin endpoints serve personal data (raw IPs + user screenshots), so they
+// FAIL CLOSED: when STATS_TOKEN is unset, deny access rather than expose it.
+// (checkToken above stays open-when-unset for the non-sensitive /api/stats.)
+function requireToken(req: Request): boolean {
+  const required = process.env.STATS_TOKEN
+  if (!required) return false
+  const provided = (req.headers['x-stats-token'] as string | undefined) ?? (req.query.token as string | undefined)
+  return provided === required
+}
+
 app.get('/api/stats', (req: Request, res: Response) => {
   if (!checkToken(req)) return res.status(401).json({ error: 'unauthorized' })
   res.json(usage.stats(Date.now()))
 })
 
 app.get('/api/admin/log', (req: Request, res: Response) => {
-  if (!checkToken(req)) return res.status(401).json({ error: 'unauthorized' })
+  if (!requireToken(req)) return res.status(401).json({ error: 'unauthorized' })
   const limit = Math.min(Number(req.query.limit) || 200, 1000)
   res.json({ rows: usage.listRecent(limit) })
 })
 
 app.get('/api/admin/image/:id', (req: Request, res: Response) => {
-  if (!checkToken(req)) return res.status(401).json({ error: 'unauthorized' })
+  if (!requireToken(req)) return res.status(401).json({ error: 'unauthorized' })
   const row = usage.getById(Number(req.params.id))
   if (!row || !row.imagePath || !existsSync(row.imagePath)) {
     return res.status(404).json({ error: 'not_found' })
